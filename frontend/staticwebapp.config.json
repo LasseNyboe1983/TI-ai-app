@@ -10,27 +10,8 @@
   },
   "routes": [
     {
-      "route": "/",
-      "rewrite": "/login.html",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/login",
-      "rewrite": "/login.html",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/chat",
-      "rewrite": "/index.html",
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/index.html",
-      "allowedRoles": ["authenticated"]
-    },
-    {
       "route": "/*",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": []
     }
   ],
   "responseOverrides": {
