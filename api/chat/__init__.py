@@ -12,12 +12,20 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
       return func.HttpResponse("Invalid request", status_code=400)
 
     client = get_client()
-    response = client.responses.create(
-        model=model,
-        input=[{"role": "user", "content": prompt}],
-        max_output_tokens=512,
-    )
-    answer = response.output[0].content[0].text
+    if model.startswith("gpt-35"):
+      completion = client.chat.completions.create(
+          model=model,
+          messages=[{"role": "user", "content": prompt}],
+          max_tokens=512,
+      )
+      answer = completion.choices[0].message.content
+    else:
+      response = client.responses.create(
+          model=model,
+          input=[{"role": "user", "content": prompt}],
+          max_output_tokens=512,
+      )
+      answer = response.output[0].content[0].text
     return func.HttpResponse(
         json.dumps({"answer": answer}),
         mimetype="application/json",
