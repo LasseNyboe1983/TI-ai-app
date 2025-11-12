@@ -33,3 +33,10 @@ form.addEventListener('submit', async (event) => {
     button.disabled = false;
   }
 });
+
+input.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    form.requestSubmit();
+  }
+});
