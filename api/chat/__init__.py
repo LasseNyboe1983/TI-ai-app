@@ -26,7 +26,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
   except Exception as exc:  # noqa: BLE001 - Azure Functions entry point
     logging.exception("Chat handler failed: %s", exc)
     return func.HttpResponse(
-        json.dumps({"error": "Service unavailable"}),
+        json.dumps({"error": "Service unavailable", "detail": str(exc)}),
         mimetype="application/json",
         status_code=500,
     )
