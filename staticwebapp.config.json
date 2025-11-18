@@ -34,9 +34,5 @@
       "redirect": "/login",
       "statusCode": 302
     }
-  },
-  "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": ["/api/*", "/*.{css,js,jpg,png,svg,ico}"]
   }
 }
