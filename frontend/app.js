@@ -1,3 +1,20 @@
+// Additional auth enforcement
+(async function enforceAuth() {
+  try {
+    const res = await fetch('/.auth/me');
+    const data = await res.json();
+    if (!data.clientPrincipal || !data.clientPrincipal.userRoles.includes('authenticated')) {
+      window.location.replace('/login.html');
+      throw new Error('Not authenticated');
+    }
+  } catch (err) {
+    if (err.message !== 'Not authenticated') {
+      window.location.replace('/login.html');
+      throw err;
+    }
+  }
+})();
+
 const form = document.getElementById('promptForm');
 const chat = document.getElementById('chat');
 const modelSelect = document.getElementById('modelSelect');

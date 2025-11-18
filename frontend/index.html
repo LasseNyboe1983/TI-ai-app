@@ -26,6 +26,22 @@
       <button type="submit">Send</button>
     </form>
   </main>
+  <script>
+    // Mandatory authentication check - block unauthenticated access
+    (async function() {
+      try {
+        const res = await fetch('/.auth/me');
+        const data = await res.json();
+        if (!data.clientPrincipal || !data.clientPrincipal.userRoles.includes('authenticated')) {
+          window.location.replace('/login.html');
+          return;
+        }
+      } catch (err) {
+        window.location.replace('/login.html');
+        return;
+      }
+    })();
+  </script>
   <script src="app.js"></script>
 </body>
 </html>

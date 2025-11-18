@@ -12,6 +12,19 @@
   },
   "routes": [
     {
+      "route": "/login.html",
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
+      "route": "/login",
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
+      "route": "/",
+      "redirect": "/login.html",
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
       "route": "/index.html",
       "allowedRoles": ["authenticated"]
     },
@@ -30,18 +43,6 @@
     {
       "route": "/api/*",
       "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/login.html",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/login",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/*",
-      "allowedRoles": ["anonymous", "authenticated"]
     }
   ],
   "responseOverrides": {
@@ -50,8 +51,8 @@
       "statusCode": 302
     }
   },
-  "navigationFallback": {
-    "rewrite": "/login.html"
+  "platform": {
+    "apiRuntime": "python:3.9"
   },
   "globalHeaders": {
     "cache-control": "no-cache, no-store, must-revalidate"
