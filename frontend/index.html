@@ -19,26 +19,13 @@
     <div class="logo">🤖</div>
     <h1>AI Chat Hub</h1>
     <p>Sign in with your organization account to start chatting with Azure AI models.</p>
-    <a class="button" href="/.auth/login/aad?post_login_redirect_uri=/chat">Sign in with Microsoft</a>
+    <a class="button" href="/chat">Sign in with Microsoft</a>
   </main>
   <script>
-    // Check if already authenticated and show message
-    async function checkAuth() {
-      try {
-        const res = await fetch('/.auth/me');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.clientPrincipal && data.clientPrincipal.userRoles.includes('authenticated')) {
-          // User is already authenticated, redirect to chat
-          console.log('User already authenticated, redirecting to chat');
-          window.location.replace('/chat');
-        }
-      } catch (err) {
-        console.warn('Auth check failed', err);
-      }
-    }
-    // Small delay to prevent race conditions
-    setTimeout(checkAuth, 100);
+    // Auto-redirect to chat (which will trigger auth)
+    setTimeout(() => {
+      window.location.href = '/chat';
+    }, 2000);
   </script>
 </body>
 </html>
