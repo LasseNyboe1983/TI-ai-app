@@ -12,12 +12,18 @@
   },
   "routes": [
     {
+      "route": "/login.html",
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
       "route": "/",
-      "rewrite": "/login.html"
+      "rewrite": "/login.html",
+      "allowedRoles": ["anonymous", "authenticated"]
     },
     {
       "route": "/login",
-      "rewrite": "/login.html"
+      "rewrite": "/login.html",
+      "allowedRoles": ["anonymous", "authenticated"]
     },
     {
       "route": "/chat",
