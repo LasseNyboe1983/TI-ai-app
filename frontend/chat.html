@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AI Chat Hub</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>AI Chat Hub</h1>
+        <div id="userInfo" style="font-size:0.85rem; color:#666;"></div>
+      </div>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <select id="modelSelect">
+          <option value="gpt-5-chat">GPT-5 Chat</option>
+          <option value="gpt-35-turbo">GPT-3.5 Turbo</option>
+        </select>
+        <a href="/.auth/logout" style="padding:0.5rem 1rem; background:#dc3545; color:#fff; text-decoration:none; border-radius:4px; font-size:0.9rem;">Logout</a>
+      </div>
+    </header>
+    <section id="chat"></section>
+    <form id="promptForm">
+      <textarea id="promptInput" placeholder="Ask anything..." required></textarea>
+      <button type="submit">Send</button>
+    </form>
+  </main>
+  <script>
+    // Mandatory authentication check - block unauthenticated access
+    (async function() {
+      try {
+        const res = await fetch('/.auth/me');
+        const data = await res.json();
+        if (!data.clientPrincipal || !data.clientPrincipal.userRoles.includes('authenticated')) {
+          window.location.replace('/');
+          return;
+        }
+      } catch (err) {
+        window.location.replace('/');
+        return;
+      }
+    })();
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>

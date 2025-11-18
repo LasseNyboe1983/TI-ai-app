@@ -4,12 +4,12 @@
     const res = await fetch('/.auth/me');
     const data = await res.json();
     if (!data.clientPrincipal || !data.clientPrincipal.userRoles.includes('authenticated')) {
-      window.location.replace('/login.html');
+      window.location.replace('/');
       throw new Error('Not authenticated');
     }
   } catch (err) {
     if (err.message !== 'Not authenticated') {
-      window.location.replace('/login.html');
+      window.location.replace('/');
       throw err;
     }
   }

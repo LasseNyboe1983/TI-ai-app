@@ -12,20 +12,12 @@
   },
   "routes": [
     {
-      "route": "/login.html",
-      "allowedRoles": ["anonymous", "authenticated"]
+      "route": "/chat.html",
+      "allowedRoles": ["authenticated"]
     },
     {
-      "route": "/login",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/",
-      "redirect": "/login.html",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/index.html",
+      "route": "/chat",
+      "rewrite": "/chat.html",
       "allowedRoles": ["authenticated"]
     },
     {
@@ -37,18 +29,13 @@
       "allowedRoles": ["authenticated"]
     },
     {
-      "route": "/chat",
-      "rewrite": "/index.html",
-      "allowedRoles": ["authenticated"]
-    },
-    {
       "route": "/api/*",
       "allowedRoles": ["authenticated"]
     }
   ],
   "responseOverrides": {
     "401": {
-      "redirect": "/login.html",
+      "redirect": "/",
       "statusCode": 302
     }
   },
