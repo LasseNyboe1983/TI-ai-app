@@ -4,6 +4,25 @@
   <meta charset="utf-8">
   <title>AI Chat Hub</title>
   <link rel="stylesheet" href="styles.css">
+  <script>
+    // Block page load and validate access immediately
+    (async function() {
+      try {
+        const testRes = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: 'access-check', model: 'gpt-35-turbo', history: [] })
+        });
+        
+        if (testRes.status === 403) {
+          await fetch('/.auth/logout');
+          window.location.replace('/access-denied.html');
+        }
+      } catch (err) {
+        console.error('Access check failed:', err);
+      }
+    })();
+  </script>
 </head>
 <body>
   <main>
