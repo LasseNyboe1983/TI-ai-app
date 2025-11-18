@@ -2,11 +2,19 @@
 (async function enforceAuth() {
   const ALLOWED_TENANT_ID = 'a157a1e5-2a04-45f5-9ca8-bd60db6bafd4';
   
+  // Prevent redirect loops
+  if (sessionStorage.getItem('authCheckInProgress') === 'true') {
+    console.log('Auth check already in progress, skipping');
+    return;
+  }
+  sessionStorage.setItem('authCheckInProgress', 'true');
+  
   try {
     const res = await fetch('/.auth/me');
     const data = await res.json();
     
     if (!data.clientPrincipal || !data.clientPrincipal.userRoles.includes('authenticated')) {
+      sessionStorage.removeItem('authCheckInProgress');
       window.location.replace('/');
       throw new Error('Not authenticated');
     }
@@ -27,16 +35,24 @@
     // Block personal Microsoft accounts (they don't have proper tenant IDs)
     if (!userTenantId || userTenantId === '9188040d-6c67-4c5b-b112-36a304b66dad') {
       console.warn('Personal account detected, redirecting to access-denied page');
+      sessionStorage.removeItem('authCheckInProgress');
+      await fetch('/.auth/logout');
       window.location.replace('/access-denied.html');
       throw new Error('Personal account detected');
     }
     
     // Verify user is from the allowed tenant
     if (userTenantId.toLowerCase() !== ALLOWED_TENANT_ID.toLowerCase()) {
-      console.warn('Wrong tenant detected, redirecting to access-denied page');
+      console.warn('Wrong tenant:', userTenantId, 'Expected:', ALLOWED_TENANT_ID);
+      sessionStorage.removeItem('authCheckInProgress');
+      await fetch('/.auth/logout');
       window.location.replace('/access-denied.html');
       throw new Error('Wrong tenant');
     }
+    
+    // Auth successful - clear the flag
+    console.log('Auth check passed!');
+    sessionStorage.removeItem('authCheckInProgress');
   } catch (err) {
     if (err.message !== 'Not authenticated' && err.message !== 'Wrong tenant') {
       window.location.replace('/');

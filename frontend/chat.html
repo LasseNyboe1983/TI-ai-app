@@ -27,38 +27,14 @@
     </form>
   </main>
   <script>
-    // Mandatory authentication and tenant validation
+    // Basic auth check - detailed validation happens in app.js
     (async function() {
-      const ALLOWED_TENANT_ID = 'a157a1e5-2a04-45f5-9ca8-bd60db6bafd4';
-      
       try {
         const res = await fetch('/.auth/me');
         const data = await res.json();
         
         if (!data.clientPrincipal || !data.clientPrincipal.userRoles.includes('authenticated')) {
           window.location.replace('/');
-          return;
-        }
-        
-        // Validate tenant ID and identity provider
-        const userClaims = data.clientPrincipal.claims || [];
-        const tidClaim = userClaims.find(c => c.typ === 'http://schemas.microsoft.com/identity/claims/tenantid');
-        const userTenantId = tidClaim ? tidClaim.val : null;
-        
-        console.log('User Tenant ID:', userTenantId);
-        console.log('Allowed Tenant ID:', ALLOWED_TENANT_ID);
-        
-        // Block personal Microsoft accounts (they don't have proper tenant IDs)
-        if (!userTenantId || userTenantId === '9188040d-6c67-4c5b-b112-36a304b66dad') {
-          console.warn('Personal account detected, redirecting to access-denied page');
-          window.location.replace('/access-denied.html');
-          return;
-        }
-        
-        // Verify user is from the allowed tenant
-        if (userTenantId.toLowerCase() !== ALLOWED_TENANT_ID.toLowerCase()) {
-          console.warn('Wrong tenant detected, redirecting to access-denied page');
-          window.location.replace('/access-denied.html');
           return;
         }
       } catch (err) {
