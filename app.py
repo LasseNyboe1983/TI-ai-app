@@ -22,9 +22,6 @@ def get_openai_client():
 
 # Routes for frontend
 @app.route('/')
-def index():
-    return send_from_directory('frontend', 'index.html')
-
 @app.route('/chat')
 @app.route('/chat.html')
 def chat():
