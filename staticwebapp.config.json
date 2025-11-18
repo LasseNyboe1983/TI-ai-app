@@ -38,6 +38,7 @@
     },
     {
       "route": "/chat",
+      "rewrite": "/index.html",
       "allowedRoles": ["authenticated"]
     },
     {
