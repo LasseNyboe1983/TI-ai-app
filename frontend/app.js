@@ -11,24 +11,30 @@
       throw new Error('Not authenticated');
     }
     
-    // Validate tenant ID
+    // Validate tenant ID and identity provider
     const userClaims = data.clientPrincipal.claims || [];
     const tidClaim = userClaims.find(c => c.typ === 'http://schemas.microsoft.com/identity/claims/tenantid');
     const userTenantId = tidClaim ? tidClaim.val : null;
+    const identityProvider = data.clientPrincipal.identityProvider;
+    const userId = data.clientPrincipal.userId;
     
     console.log('User Tenant ID:', userTenantId);
     console.log('Allowed Tenant ID:', ALLOWED_TENANT_ID);
+    console.log('Identity Provider:', identityProvider);
+    console.log('User ID:', userId);
     console.log('All claims:', userClaims);
     
-    if (!userTenantId) {
-      alert('Access Denied: Unable to verify organization membership.');
+    // Block personal Microsoft accounts (they don't have proper tenant IDs)
+    if (!userTenantId || userTenantId === '9188040d-6c67-4c5b-b112-36a304b66dad') {
+      alert('Access Denied: Personal Microsoft accounts are not allowed. Please use your organizational account.');
       await fetch('/.auth/logout');
       window.location.replace('/');
-      throw new Error('No tenant ID');
+      throw new Error('Personal account detected');
     }
     
+    // Verify user is from the allowed tenant
     if (userTenantId.toLowerCase() !== ALLOWED_TENANT_ID.toLowerCase()) {
-      alert('Access Denied: Only users from the authorized organization can access this application.');
+      alert('Access Denied: Only users from Teknologisk Institut can access this application.');
       await fetch('/.auth/logout');
       window.location.replace('/');
       throw new Error('Wrong tenant');
