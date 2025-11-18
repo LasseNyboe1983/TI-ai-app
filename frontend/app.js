@@ -1,14 +1,29 @@
-// Additional auth enforcement
+// Additional auth enforcement with tenant validation
 (async function enforceAuth() {
+  const ALLOWED_TENANT_ID = 'a157a1e5-2a04-45f5-9ca8-bd60db6bafd4';
+  
   try {
     const res = await fetch('/.auth/me');
     const data = await res.json();
+    
     if (!data.clientPrincipal || !data.clientPrincipal.userRoles.includes('authenticated')) {
       window.location.replace('/');
       throw new Error('Not authenticated');
     }
+    
+    // Validate tenant ID
+    const userClaims = data.clientPrincipal.claims || [];
+    const tidClaim = userClaims.find(c => c.typ === 'http://schemas.microsoft.com/identity/claims/tenantid');
+    const userTenantId = tidClaim ? tidClaim.val : null;
+    
+    if (userTenantId && userTenantId.toLowerCase() !== ALLOWED_TENANT_ID.toLowerCase()) {
+      alert('Access Denied: Only users from the authorized organization can access this application.');
+      await fetch('/.auth/logout');
+      window.location.replace('/');
+      throw new Error('Wrong tenant');
+    }
   } catch (err) {
-    if (err.message !== 'Not authenticated') {
+    if (err.message !== 'Not authenticated' && err.message !== 'Wrong tenant') {
       window.location.replace('/');
       throw err;
     }

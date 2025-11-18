@@ -27,12 +27,27 @@
     </form>
   </main>
   <script>
-    // Mandatory authentication check - block unauthenticated access
+    // Mandatory authentication and tenant validation
     (async function() {
+      const ALLOWED_TENANT_ID = 'a157a1e5-2a04-45f5-9ca8-bd60db6bafd4';
+      
       try {
         const res = await fetch('/.auth/me');
         const data = await res.json();
+        
         if (!data.clientPrincipal || !data.clientPrincipal.userRoles.includes('authenticated')) {
+          window.location.replace('/');
+          return;
+        }
+        
+        // Validate tenant ID
+        const userClaims = data.clientPrincipal.claims || [];
+        const tidClaim = userClaims.find(c => c.typ === 'http://schemas.microsoft.com/identity/claims/tenantid');
+        const userTenantId = tidClaim ? tidClaim.val : null;
+        
+        if (userTenantId && userTenantId.toLowerCase() !== ALLOWED_TENANT_ID.toLowerCase()) {
+          alert('Access Denied: Only users from the authorized organization can access this application.');
+          await fetch('/.auth/logout');
           window.location.replace('/');
           return;
         }

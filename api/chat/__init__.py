@@ -1,10 +1,28 @@
 import json
 import logging
+import os
 import azure.functions as func
 from ..shared.openai_client import get_client
 
+ALLOWED_TENANT_ID = "a157a1e5-2a04-45f5-9ca8-bd60db6bafd4"
+
 def main(req: func.HttpRequest) -> func.HttpResponse:
   try:
+    # Validate tenant ID from Azure Static Web Apps auth headers
+    principal_header = req.headers.get('x-ms-client-principal')
+    if principal_header:
+      import base64
+      principal_data = json.loads(base64.b64decode(principal_header).decode('utf-8'))
+      user_tenant_id = principal_data.get('tid')
+      
+      if user_tenant_id and user_tenant_id.lower() != ALLOWED_TENANT_ID.lower():
+        logging.warning(f"Access denied for tenant: {user_tenant_id}")
+        return func.HttpResponse(
+          json.dumps({"error": "Access denied. Only users from the authorized organization can access this service."}),
+          mimetype="application/json",
+          status_code=403
+        )
+    
     body = req.get_json()
     prompt = body.get("prompt")
     model = body.get("model")
