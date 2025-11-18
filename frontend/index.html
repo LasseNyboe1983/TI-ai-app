@@ -22,20 +22,23 @@
     <a class="button" href="/.auth/login/aad?post_login_redirect_uri=/chat">Sign in with Microsoft</a>
   </main>
   <script>
-    // Auto-redirect if already authenticated
+    // Check if already authenticated and show message
     async function checkAuth() {
       try {
         const res = await fetch('/.auth/me');
         if (!res.ok) return;
         const data = await res.json();
         if (data.clientPrincipal && data.clientPrincipal.userRoles.includes('authenticated')) {
+          // User is already authenticated, redirect to chat
+          console.log('User already authenticated, redirecting to chat');
           window.location.replace('/chat');
         }
       } catch (err) {
         console.warn('Auth check failed', err);
       }
     }
-    checkAuth();
+    // Small delay to prevent race conditions
+    setTimeout(checkAuth, 100);
   </script>
 </body>
 </html>

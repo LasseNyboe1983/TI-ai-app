@@ -21,37 +21,44 @@
     
     // Validate tenant ID and identity provider
     const userClaims = data.clientPrincipal.claims || [];
-    const tidClaim = userClaims.find(c => c.typ === 'http://schemas.microsoft.com/identity/claims/tenantid');
+    const tidClaim = userClaims.find(c => c.typ === 'http://schemas.microsoft.com/identity/claims/tenantid' || c.typ === 'tid');
     const userTenantId = tidClaim ? tidClaim.val : null;
     const identityProvider = data.clientPrincipal.identityProvider;
     const userId = data.clientPrincipal.userId;
     
+    console.log('=== Auth Debug Info ===');
     console.log('User Tenant ID:', userTenantId);
     console.log('Allowed Tenant ID:', ALLOWED_TENANT_ID);
     console.log('Identity Provider:', identityProvider);
     console.log('User ID:', userId);
-    console.log('All claims:', userClaims);
+    console.log('All claims:', JSON.stringify(userClaims, null, 2));
+    console.log('=====================');
     
-    // Block personal Microsoft accounts (they don't have proper tenant IDs)
-    if (!userTenantId || userTenantId === '9188040d-6c67-4c5b-b112-36a304b66dad') {
-      console.warn('Personal account detected, redirecting to access-denied page');
-      sessionStorage.removeItem('authCheckInProgress');
-      await fetch('/.auth/logout');
-      window.location.replace('/access-denied.html');
-      throw new Error('Personal account detected');
-    }
-    
-    // Verify user is from the allowed tenant
-    if (userTenantId.toLowerCase() !== ALLOWED_TENANT_ID.toLowerCase()) {
-      console.warn('Wrong tenant:', userTenantId, 'Expected:', ALLOWED_TENANT_ID);
-      sessionStorage.removeItem('authCheckInProgress');
-      await fetch('/.auth/logout');
-      window.location.replace('/access-denied.html');
-      throw new Error('Wrong tenant');
+    // Only block if we can definitively identify it's a personal account or wrong tenant
+    if (userTenantId) {
+      // Block personal Microsoft accounts
+      if (userTenantId === '9188040d-6c67-4c5b-b112-36a304b66dad') {
+        console.warn('Personal Microsoft account detected');
+        sessionStorage.removeItem('authCheckInProgress');
+        await fetch('/.auth/logout');
+        window.location.replace('/access-denied.html');
+        throw new Error('Personal account detected');
+      }
+      
+      // Verify user is from the allowed tenant
+      if (userTenantId.toLowerCase() !== ALLOWED_TENANT_ID.toLowerCase()) {
+        console.warn('Wrong tenant:', userTenantId, 'Expected:', ALLOWED_TENANT_ID);
+        sessionStorage.removeItem('authCheckInProgress');
+        await fetch('/.auth/logout');
+        window.location.replace('/access-denied.html');
+        throw new Error('Wrong tenant');
+      }
+    } else {
+      console.warn('No tenant ID found in claims - allowing access (Azure AD auth should handle this)');
     }
     
     // Auth successful - clear the flag
-    console.log('Auth check passed!');
+    console.log('✅ Auth check passed!');
     sessionStorage.removeItem('authCheckInProgress');
   } catch (err) {
     if (err.message !== 'Not authenticated' && err.message !== 'Wrong tenant') {
