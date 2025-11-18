@@ -3,6 +3,48 @@
 <head>
   <meta charset="utf-8">
   <title>AI Chat Hub</title>
+  <script>
+    // IMMEDIATE tenant check - block page load if validation fails
+    (async function() {
+      const ALLOWED_TENANT = 'a157a1e5-2a04-45f5-9ca8-bd60db6bafd4';
+      try {
+        const res = await fetch('/.auth/me');
+        const data = await res.json();
+        
+        if (!data.clientPrincipal) {
+          window.location.replace('/');
+          return;
+        }
+        
+        // Check for personal accounts by email domain
+        const userId = data.clientPrincipal.userId || '';
+        const personalDomains = ['hotmail.com', 'gmail.com', 'outlook.com', 'live.com', 'yahoo.com'];
+        const isPersonalAccount = personalDomains.some(domain => userId.toLowerCase().includes(domain));
+        
+        if (isPersonalAccount) {
+          console.error('Personal account detected:', userId);
+          await fetch('/.auth/logout');
+          window.location.replace('/access-denied.html');
+          return;
+        }
+        
+        // Check tenant ID from claims
+        const claims = data.clientPrincipal.claims || [];
+        const tidClaim = claims.find(c => c.typ?.includes('tenantid') || c.typ === 'tid');
+        const tenantId = tidClaim ? tidClaim.val : null;
+        
+        if (tenantId && tenantId.toLowerCase() !== ALLOWED_TENANT.toLowerCase()) {
+          console.error('Wrong tenant:', tenantId);
+          await fetch('/.auth/logout');
+          window.location.replace('/access-denied.html');
+          return;
+        }
+      } catch (err) {
+        console.error('Auth check failed:', err);
+        window.location.replace('/');
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>

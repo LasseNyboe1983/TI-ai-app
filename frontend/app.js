@@ -34,27 +34,43 @@
     console.log('All claims:', JSON.stringify(userClaims, null, 2));
     console.log('=====================');
     
-    // Only block if we can definitively identify it's a personal account or wrong tenant
-    if (userTenantId) {
-      // Block personal Microsoft accounts
-      if (userTenantId === '9188040d-6c67-4c5b-b112-36a304b66dad') {
-        console.warn('Personal Microsoft account detected');
-        sessionStorage.removeItem('authCheckInProgress');
-        await fetch('/.auth/logout');
-        window.location.replace('/access-denied.html');
-        throw new Error('Personal account detected');
-      }
-      
-      // Verify user is from the allowed tenant
-      if (userTenantId.toLowerCase() !== ALLOWED_TENANT_ID.toLowerCase()) {
-        console.warn('Wrong tenant:', userTenantId, 'Expected:', ALLOWED_TENANT_ID);
-        sessionStorage.removeItem('authCheckInProgress');
-        await fetch('/.auth/logout');
-        window.location.replace('/access-denied.html');
-        throw new Error('Wrong tenant');
-      }
-    } else {
-      console.warn('No tenant ID found in claims - allowing access (Azure AD auth should handle this)');
+    // Check for personal accounts by email/userId
+    const personalDomains = ['hotmail.com', 'gmail.com', 'outlook.com', 'live.com', 'yahoo.com'];
+    const isPersonalAccount = personalDomains.some(domain => userId.toLowerCase().includes(domain));
+    
+    if (isPersonalAccount) {
+      console.error('❌ Personal account detected:', userId);
+      sessionStorage.removeItem('authCheckInProgress');
+      await fetch('/.auth/logout');
+      window.location.replace('/access-denied.html');
+      throw new Error('Personal account detected');
+    }
+    
+    // Block personal Microsoft accounts by tenant ID
+    if (userTenantId === '9188040d-6c67-4c5b-b112-36a304b66dad') {
+      console.error('❌ Personal Microsoft account tenant detected');
+      sessionStorage.removeItem('authCheckInProgress');
+      await fetch('/.auth/logout');
+      window.location.replace('/access-denied.html');
+      throw new Error('Personal account tenant');
+    }
+    
+    // STRICT: Require tenant ID and verify it matches
+    if (!userTenantId) {
+      console.error('❌ No tenant ID found - blocking access');
+      sessionStorage.removeItem('authCheckInProgress');
+      await fetch('/.auth/logout');
+      window.location.replace('/access-denied.html');
+      throw new Error('No tenant ID');
+    }
+    
+    // Verify user is from the allowed tenant
+    if (userTenantId.toLowerCase() !== ALLOWED_TENANT_ID.toLowerCase()) {
+      console.error('❌ Wrong tenant:', userTenantId, 'Expected:', ALLOWED_TENANT_ID);
+      sessionStorage.removeItem('authCheckInProgress');
+      await fetch('/.auth/logout');
+      window.location.replace('/access-denied.html');
+      throw new Error('Wrong tenant');
     }
     
     // Auth successful - clear the flag
