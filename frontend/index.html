@@ -19,13 +19,7 @@
     <div class="logo">🤖</div>
     <h1>AI Chat Hub</h1>
     <p>Sign in with your organization account to start chatting with Azure AI models.</p>
-    <a class="button" href="/chat">Sign in with Microsoft</a>
+    <a class="button" href="/.auth/login/aad?post_login_redirect_uri=/chat">Sign in with Microsoft</a>
   </main>
-  <script>
-    // Auto-redirect to chat (which will trigger auth)
-    setTimeout(() => {
-      window.location.href = '/chat';
-    }, 2000);
-  </script>
 </body>
 </html>
