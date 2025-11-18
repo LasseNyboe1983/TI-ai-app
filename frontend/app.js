@@ -1,24 +1,3 @@
-// Validate access by checking the backend
-(async function validateAccess() {
-  try {
-    const testRes = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: 'test', model: 'gpt-35-turbo', history: [] })
-    });
-    
-    if (testRes.status === 403) {
-      // User is not authorized - redirect to access denied
-      await fetch('/.auth/logout');
-      window.location.replace('/access-denied.html');
-      throw new Error('Access denied');
-    }
-  } catch (err) {
-    if (err.message === 'Access denied') throw err;
-    console.error('Access validation failed:', err);
-  }
-})();
-
 const form = document.getElementById('promptForm');
 const chat = document.getElementById('chat');
 const modelSelect = document.getElementById('modelSelect');
