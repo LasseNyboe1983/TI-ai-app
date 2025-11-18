@@ -26,23 +26,6 @@
       <button type="submit">Send</button>
     </form>
   </main>
-  <script>
-    // Basic auth check - detailed validation happens in app.js
-    (async function() {
-      try {
-        const res = await fetch('/.auth/me');
-        const data = await res.json();
-        
-        if (!data.clientPrincipal || !data.clientPrincipal.userRoles.includes('authenticated')) {
-          window.location.replace('/');
-          return;
-        }
-      } catch (err) {
-        window.location.replace('/');
-        return;
-      }
-    })();
-  </script>
   <script src="app.js"></script>
 </body>
 </html>
