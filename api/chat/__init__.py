@@ -14,8 +14,34 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
       import base64
       principal_data = json.loads(base64.b64decode(principal_header).decode('utf-8'))
       user_tenant_id = principal_data.get('tid')
+      user_id = principal_data.get('userId', '')
       
-      if user_tenant_id and user_tenant_id.lower() != ALLOWED_TENANT_ID.lower():
+      # Block personal Microsoft account domains
+      personal_domains = ['hotmail.com', 'gmail.com', 'outlook.com', 'live.com', 'yahoo.com']
+      is_personal = any(domain in user_id.lower() for domain in personal_domains)
+      
+      # Block personal Microsoft account tenant
+      personal_tenant = '9188040d-6c67-4c5b-b112-36a304b66dad'
+      
+      if is_personal or user_tenant_id == personal_tenant:
+        logging.warning(f"Personal account blocked: {user_id}, tenant: {user_tenant_id}")
+        return func.HttpResponse(
+          json.dumps({"error": "Personal Microsoft accounts are not permitted."}),
+          mimetype="application/json",
+          status_code=403
+        )
+      
+      # Require tenant ID to be present
+      if not user_tenant_id:
+        logging.warning(f"No tenant ID for user: {user_id}")
+        return func.HttpResponse(
+          json.dumps({"error": "Access denied. Tenant verification required."}),
+          mimetype="application/json",
+          status_code=403
+        )
+      
+      # Verify tenant matches
+      if user_tenant_id.lower() != ALLOWED_TENANT_ID.lower():
         logging.warning(f"Access denied for tenant: {user_tenant_id}")
         return func.HttpResponse(
           json.dumps({"error": "Access denied. Only users from the authorized organization can access this service."}),
