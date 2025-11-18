@@ -12,25 +12,6 @@
   },
   "routes": [
     {
-      "route": "/login.html",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/",
-      "rewrite": "/login.html",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/login",
-      "rewrite": "/login.html",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/chat",
-      "rewrite": "/index.html",
-      "allowedRoles": ["authenticated"]
-    },
-    {
       "route": "/index.html",
       "allowedRoles": ["authenticated"]
     },
@@ -43,14 +24,36 @@
       "allowedRoles": ["authenticated"]
     },
     {
+      "route": "/chat",
+      "allowedRoles": ["authenticated"]
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/login.html",
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
+      "route": "/login",
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
+      "route": "/*",
+      "allowedRoles": ["anonymous", "authenticated"]
     }
   ],
   "responseOverrides": {
     "401": {
-      "redirect": "/login",
+      "redirect": "/login.html",
       "statusCode": 302
     }
+  },
+  "navigationFallback": {
+    "rewrite": "/login.html"
+  },
+  "globalHeaders": {
+    "cache-control": "no-cache, no-store, must-revalidate"
   }
 }
