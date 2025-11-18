@@ -16,7 +16,18 @@
     const tidClaim = userClaims.find(c => c.typ === 'http://schemas.microsoft.com/identity/claims/tenantid');
     const userTenantId = tidClaim ? tidClaim.val : null;
     
-    if (userTenantId && userTenantId.toLowerCase() !== ALLOWED_TENANT_ID.toLowerCase()) {
+    console.log('User Tenant ID:', userTenantId);
+    console.log('Allowed Tenant ID:', ALLOWED_TENANT_ID);
+    console.log('All claims:', userClaims);
+    
+    if (!userTenantId) {
+      alert('Access Denied: Unable to verify organization membership.');
+      await fetch('/.auth/logout');
+      window.location.replace('/');
+      throw new Error('No tenant ID');
+    }
+    
+    if (userTenantId.toLowerCase() !== ALLOWED_TENANT_ID.toLowerCase()) {
       alert('Access Denied: Only users from the authorized organization can access this application.');
       await fetch('/.auth/logout');
       window.location.replace('/');
