@@ -5,6 +5,9 @@ import azure.functions as func
 from ..shared.openai_client import get_client
 
 ALLOWED_TENANT_ID = "a157a1e5-2a04-45f5-9ca8-bd60db6bafd4"
+ALLOWED_USERS = [
+  "user014@undervis.nu"
+]
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
   try:
@@ -14,7 +17,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
       import base64
       principal_data = json.loads(base64.b64decode(principal_header).decode('utf-8'))
       user_tenant_id = principal_data.get('tid')
-      user_id = principal_data.get('userId', '')
+      user_id = principal_data.get('userId', '').lower()
       
       # Block personal Microsoft account domains
       personal_domains = ['hotmail.com', 'gmail.com', 'outlook.com', 'live.com', 'yahoo.com']
@@ -45,6 +48,15 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         logging.warning(f"Access denied for tenant: {user_tenant_id}")
         return func.HttpResponse(
           json.dumps({"error": "Access denied. Only users from the authorized organization can access this service."}),
+          mimetype="application/json",
+          status_code=403
+        )
+      
+      # Check if user is in the allowed list
+      if user_id not in ALLOWED_USERS:
+        logging.warning(f"User not in allowed list: {user_id}")
+        return func.HttpResponse(
+          json.dumps({"error": "Access denied. Your account is not authorized to use this service."}),
           mimetype="application/json",
           status_code=403
         )
