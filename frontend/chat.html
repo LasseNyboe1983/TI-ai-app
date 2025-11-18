@@ -50,17 +50,15 @@
         
         // Block personal Microsoft accounts (they don't have proper tenant IDs)
         if (!userTenantId || userTenantId === '9188040d-6c67-4c5b-b112-36a304b66dad') {
-          alert('Access Denied: Personal Microsoft accounts are not allowed. Please use your organizational account.');
-          await fetch('/.auth/logout');
-          window.location.replace('/');
+          console.warn('Personal account detected, redirecting to access-denied page');
+          window.location.replace('/access-denied.html');
           return;
         }
         
         // Verify user is from the allowed tenant
         if (userTenantId.toLowerCase() !== ALLOWED_TENANT_ID.toLowerCase()) {
-          alert('Access Denied: Only users from Teknologisk Institut can access this application.');
-          await fetch('/.auth/logout');
-          window.location.replace('/');
+          console.warn('Wrong tenant detected, redirecting to access-denied page');
+          window.location.replace('/access-denied.html');
           return;
         }
       } catch (err) {
