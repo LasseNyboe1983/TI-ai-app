@@ -8,21 +8,29 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     body = req.get_json()
     prompt = body.get("prompt")
     model = body.get("model")
+    history = body.get("history", [])
+    
     if not prompt or not model:
       return func.HttpResponse("Invalid request", status_code=400)
 
     client = get_client()
+    
+    # Use conversation history for context
     if model.startswith("gpt-35"):
+      # For chat completions, use full message history
+      messages = history if history else [{"role": "user", "content": prompt}]
       completion = client.chat.completions.create(
           model=model,
-          messages=[{"role": "user", "content": prompt}],
+          messages=messages,
           max_tokens=512,
       )
       answer = completion.choices[0].message.content
     else:
+      # For responses API, use input array with history
+      input_messages = history if history else [{"role": "user", "content": prompt}]
       response = client.responses.create(
           model=model,
-          input=[{"role": "user", "content": prompt}],
+          input=input_messages,
           max_output_tokens=512,
       )
       answer = response.output[0].content[0].text
@@ -34,7 +42,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
   except Exception as exc:  # noqa: BLE001 - Azure Functions entry point
     logging.exception("Chat handler failed: %s", exc)
     return func.HttpResponse(
-        json.dumps({"error": "Service unavailable", "detail": str(exc)}),
+        json.dumps({"error": "Service unavailable. Please try again later."}),
         mimetype="application/json",
         status_code=500,
     )

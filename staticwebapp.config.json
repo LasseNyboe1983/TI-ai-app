@@ -25,6 +25,18 @@
       "allowedRoles": ["authenticated"]
     },
     {
+      "route": "/index.html",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/app.js",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/styles.css",
+      "allowedRoles": ["authenticated"]
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["authenticated"]
     }
