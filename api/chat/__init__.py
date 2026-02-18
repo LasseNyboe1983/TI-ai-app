@@ -174,19 +174,30 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if provider and provider.lower() != "aad":
         return _json_response({"error": "Access denied: Microsoft Entra sign-in required."}, 403)
 
-    if allowed_tenant_id and (tenant_id or "").lower() != allowed_tenant_id:
-        actual_tenant = (tenant_id or "missing")
-        return _json_response(
-            {
-                "error": f"Access denied: wrong tenant. expected={allowed_tenant_id} actual={actual_tenant}",
-                "expectedTenant": allowed_tenant_id,
-                "actualTenant": actual_tenant,
-            },
-            403,
-        )
-
     if allowed_users and (user_upn not in allowed_users):
         return _json_response({"error": "Access denied: user not allowed."}, 403)
+
+    if allowed_tenant_id:
+        if tenant_id:
+            if tenant_id.lower() != allowed_tenant_id:
+                actual_tenant = tenant_id
+                return _json_response(
+                    {
+                        "error": f"Access denied: wrong tenant. expected={allowed_tenant_id} actual={actual_tenant}",
+                        "expectedTenant": allowed_tenant_id,
+                        "actualTenant": actual_tenant,
+                    },
+                    403,
+                )
+        elif not allowed_users:
+            return _json_response(
+                {
+                    "error": "Access denied: tenant claim missing and no ALLOWED_USERS fallback configured.",
+                    "expectedTenant": allowed_tenant_id,
+                    "actualTenant": "missing",
+                },
+                403,
+            )
 
     try:
         body = req.get_json()
