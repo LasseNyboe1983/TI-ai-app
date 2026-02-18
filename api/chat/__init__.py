@@ -32,12 +32,12 @@ MODEL_REGISTRY = {
         "api_version_env": "MODEL_ROUTER_API_VERSION",
     },
     "FLUX.1-Kontext-pro": {
-        "kind": "responses_mixed",
+        "kind": "images_generate",
         "endpoint_env": "FLUX_ENDPOINT",
         "key_env": "FLUX_KEY",
         "fallback_endpoint_env": "AZURE_OPENAI_ENDPOINT",
         "fallback_key_env": "AZURE_OPENAI_KEY",
-        "api_version": "2025-03-01-preview",
+        "api_version": "2025-04-01-preview",
         "api_version_env": "FLUX_API_VERSION",
     },
 }
@@ -203,6 +203,29 @@ def _extract_image_from_response(response: Any) -> str | None:
     return None
 
 
+def _latest_user_prompt(messages: list[dict[str, str]]) -> str:
+    for message in reversed(messages):
+        if message.get("role") == "user":
+            return str(message.get("content") or "")
+    return ""
+
+
+def _extract_image_from_images_api_response(response: Any) -> str | None:
+    data = getattr(response, "data", None) or []
+    if not data:
+        return None
+
+    first = data[0]
+    image_url = getattr(first, "url", None)
+    b64 = getattr(first, "b64_json", None)
+
+    if image_url:
+        return image_url
+    if b64:
+        return f"data:image/png;base64,{b64}"
+    return None
+
+
 def _chat_with_openai(model: str, messages: list[dict[str, str]]) -> dict[str, str]:
     client, config = _resolve_model_client(model)
     kind = config["kind"]
@@ -211,6 +234,14 @@ def _chat_with_openai(model: str, messages: list[dict[str, str]]) -> dict[str, s
         response = client.chat.completions.create(model=model, messages=messages)
         text = response.choices[0].message.content or ""
         return {"type": "text", "text": text}
+
+    if kind == "images_generate":
+        prompt = _latest_user_prompt(messages)
+        response = client.images.generate(model=model, prompt=prompt)
+        image_url = _extract_image_from_images_api_response(response)
+        if image_url:
+            return {"type": "image", "imageUrl": image_url}
+        return {"type": "text", "text": "Image model returned no displayable image output."}
 
     response = client.responses.create(model=model, input=messages)
     text = getattr(response, "output_text", "") or ""
