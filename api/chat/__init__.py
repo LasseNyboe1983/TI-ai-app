@@ -145,7 +145,7 @@ def _chat_with_openai(model: str, messages: list[dict[str, str]]) -> str:
         api_version="2025-03-01-preview",
     )
 
-    if model == "gpt-5-chat":
+    if model in {"gpt-5-chat", "model-router"}:
         response = client.responses.create(model=model, input=messages)
         return response.output_text or ""
 
@@ -211,7 +211,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if not prompt:
         return _json_response({"error": "Prompt is required."}, 400)
 
-    if model not in {"gpt-35-turbo", "gpt-5-chat"}:
+    if model not in {"gpt-35-turbo", "gpt-5-chat", "model-router"}:
         return _json_response({"error": "Unsupported model."}, 400)
 
     try:
