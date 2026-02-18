@@ -1,5 +1,6 @@
 import json
 import os
+import base64
 from typing import Any
 
 import azure.functions as func
@@ -38,8 +39,6 @@ def _extract_identity(req: func.HttpRequest) -> tuple[str | None, str | None, st
         return None, None, None
 
     try:
-        import base64
-
         decoded = base64.b64decode(raw).decode("utf-8")
         principal = json.loads(decoded)
     except Exception:
@@ -69,6 +68,44 @@ def _extract_identity(req: func.HttpRequest) -> tuple[str | None, str | None, st
     )
     provider = principal.get("identityProvider")
     return tenant_id, (user_upn.lower() if user_upn else None), provider
+
+
+def _decode_jwt_payload(token: str) -> dict[str, Any] | None:
+    parts = token.split(".")
+    if len(parts) < 2:
+        return None
+
+    payload = parts[1]
+    padding = "=" * (-len(payload) % 4)
+
+    try:
+        decoded = base64.urlsafe_b64decode(payload + padding).decode("utf-8")
+        data = json.loads(decoded)
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
+def _extract_identity_from_aad_tokens(req: func.HttpRequest) -> tuple[str | None, str | None]:
+    token = req.headers.get("x-ms-token-aad-id-token") or req.headers.get("x-ms-token-aad-access-token")
+    if not token:
+        return None, None
+
+    payload = _decode_jwt_payload(token)
+    if not payload:
+        return None, None
+
+    tenant_id = payload.get("tid")
+    user_upn = (
+        payload.get("preferred_username")
+        or payload.get("upn")
+        or payload.get("email")
+    )
+
+    return (
+        str(tenant_id).lower() if tenant_id else None,
+        str(user_upn).lower() if user_upn else None,
+    )
 
 
 def _validate_env() -> str | None:
@@ -105,6 +142,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response({"error": env_error}, 500)
 
     tenant_id, user_upn, provider = _extract_identity(req)
+    if not tenant_id or not user_upn:
+        token_tenant_id, token_user_upn = _extract_identity_from_aad_tokens(req)
+        tenant_id = tenant_id or token_tenant_id
+        user_upn = user_upn or token_user_upn
 
     allowed_tenant_id = (os.getenv("ALLOWED_TENANT_ID") or "").strip().lower()
     allowed_users = {
@@ -117,7 +158,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response({"error": "Access denied: Microsoft Entra sign-in required."}, 403)
 
     if allowed_tenant_id and (tenant_id or "").lower() != allowed_tenant_id:
-        return _json_response({"error": "Access denied: wrong tenant."}, 403)
+        return _json_response(
+            {
+                "error": "Access denied: wrong tenant.",
+                "expectedTenant": allowed_tenant_id,
+                "actualTenant": (tenant_id or "missing"),
+            },
+            403,
+        )
 
     if allowed_users and (user_upn not in allowed_users):
         return _json_response({"error": "Access denied: user not allowed."}, 403)
