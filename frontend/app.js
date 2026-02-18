@@ -33,6 +33,49 @@ function addMessage(role, text) {
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
+function addImageMessage(role, imageUrl) {
+  const node = document.createElement('div');
+  node.className = `msg ${role}`;
+
+  const image = document.createElement('img');
+  image.className = 'msg-image';
+  image.src = imageUrl;
+  image.alt = 'Generated image';
+
+  node.appendChild(image);
+  chatEl.appendChild(node);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+async function loadModels() {
+  try {
+    const response = await fetch('/api/models', { credentials: 'include' });
+    const data = await response.json();
+    const models = Array.isArray(data?.models) ? data.models : [];
+
+    modelEl.innerHTML = '';
+    for (const model of models) {
+      const option = document.createElement('option');
+      option.value = model.id;
+      option.textContent = model.label || model.id;
+      modelEl.appendChild(option);
+    }
+
+    if (!modelEl.options.length) {
+      const fallback = document.createElement('option');
+      fallback.value = 'gpt-35-turbo';
+      fallback.textContent = 'gpt-35-turbo';
+      modelEl.appendChild(fallback);
+    }
+  } catch {
+    modelEl.innerHTML = '';
+    const fallback = document.createElement('option');
+    fallback.value = 'gpt-35-turbo';
+    fallback.textContent = 'gpt-35-turbo';
+    modelEl.appendChild(fallback);
+  }
+}
+
 async function loadUser() {
   try {
     const res = await fetch('/.auth/me', { credentials: 'include' });
@@ -88,12 +131,19 @@ form.addEventListener('submit', async (event) => {
       return;
     }
 
-    const reply = data.reply || '(No response)';
-    addMessage('assistant', reply);
+    const replyType = data.replyType || 'text';
+    const reply = data.reply || '';
+    const imageUrl = data.imageUrl || '';
+
+    if (replyType === 'image' && imageUrl) {
+      addImageMessage('assistant', imageUrl);
+    } else {
+      addMessage('assistant', reply || '(No response)');
+    }
 
     conversationHistory = Array.isArray(data.conversationHistory)
       ? data.conversationHistory
-      : [...conversationHistory, { role: 'user', content: prompt }, { role: 'assistant', content: reply }];
+      : [...conversationHistory, { role: 'user', content: prompt }, { role: 'assistant', content: reply || '[image generated]' }];
   } catch {
     addMessage('system', 'Network or server error.');
   } finally {
@@ -115,3 +165,4 @@ if (signOutBtn) {
 }
 
 loadUser();
+loadModels();

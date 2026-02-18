@@ -9,6 +9,39 @@ from openai import AzureOpenAI
 
 REQUIRED_ENV_VARS = ["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_KEY"]
 
+MODEL_REGISTRY = {
+    "gpt-35-turbo": {
+        "kind": "chat_completions",
+        "endpoint_env": "AZURE_OPENAI_ENDPOINT",
+        "key_env": "AZURE_OPENAI_KEY",
+        "api_version": "2025-03-01-preview",
+    },
+    "gpt-5-chat": {
+        "kind": "responses_text",
+        "endpoint_env": "AZURE_OPENAI_ENDPOINT",
+        "key_env": "AZURE_OPENAI_KEY",
+        "api_version": "2025-03-01-preview",
+    },
+    "model-router": {
+        "kind": "chat_completions",
+        "endpoint_env": "MODEL_ROUTER_ENDPOINT",
+        "key_env": "MODEL_ROUTER_KEY",
+        "fallback_endpoint_env": "AZURE_OPENAI_ENDPOINT",
+        "fallback_key_env": "AZURE_OPENAI_KEY",
+        "api_version": "2025-01-01-preview",
+        "api_version_env": "MODEL_ROUTER_API_VERSION",
+    },
+    "FLUX.1-Kontext-pro": {
+        "kind": "responses_mixed",
+        "endpoint_env": "FLUX_ENDPOINT",
+        "key_env": "FLUX_KEY",
+        "fallback_endpoint_env": "AZURE_OPENAI_ENDPOINT",
+        "fallback_key_env": "AZURE_OPENAI_KEY",
+        "api_version": "2025-01-01-preview",
+        "api_version_env": "FLUX_API_VERSION",
+    },
+}
+
 
 def _tenant_from_issuer(issuer: str | None) -> str | None:
     if not issuer:
@@ -138,46 +171,57 @@ def _build_messages(history: list[dict[str, str]], prompt: str) -> list[dict[str
     return messages
 
 
-def _chat_with_openai(model: str, messages: list[dict[str, str]]) -> str:
+def _resolve_model_client(model: str) -> tuple[AzureOpenAI, dict[str, str]]:
+    config = MODEL_REGISTRY[model]
+
+    endpoint = os.getenv(config["endpoint_env"]) or os.getenv(config.get("fallback_endpoint_env", ""))
+    key = os.getenv(config["key_env"]) or os.getenv(config.get("fallback_key_env", ""))
+    api_version = os.getenv(config.get("api_version_env", "")) or config["api_version"]
+
     client = AzureOpenAI(
-        api_key=os.getenv("AZURE_OPENAI_KEY"),
-        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-        api_version="2025-03-01-preview",
+        api_key=key,
+        azure_endpoint=endpoint,
+        api_version=api_version,
     )
+    return client, config
 
-    if model == "gpt-5-chat":
-        response = client.responses.create(model=model, input=messages)
-        return response.output_text or ""
 
-    if model == "model-router":
-        model_router_endpoint = os.getenv("MODEL_ROUTER_ENDPOINT") or os.getenv("AZURE_OPENAI_ENDPOINT")
-        model_router_key = os.getenv("MODEL_ROUTER_KEY") or os.getenv("AZURE_OPENAI_KEY")
-        model_router_api_version = os.getenv("MODEL_ROUTER_API_VERSION") or "2025-01-01-preview"
+def _extract_image_from_response(response: Any) -> str | None:
+    output = getattr(response, "output", None) or []
+    for block in output:
+        contents = getattr(block, "content", None) or []
+        for item in contents:
+            item_type = getattr(item, "type", "")
+            image_url = getattr(item, "image_url", None) or getattr(item, "url", None)
+            b64 = getattr(item, "b64_json", None) or getattr(item, "base64", None)
+            if image_url:
+                return image_url
+            if b64:
+                return f"data:image/png;base64,{b64}"
+            if item_type in {"output_image", "image"} and image_url:
+                return image_url
+    return None
 
-        model_router_client = AzureOpenAI(
-            api_key=model_router_key,
-            azure_endpoint=model_router_endpoint,
-            api_version=model_router_api_version,
-        )
-        response = model_router_client.chat.completions.create(model=model, messages=messages)
-        return response.choices[0].message.content or ""
 
-    if model == "FLUX.1-Kontext-pro":
-        flux_endpoint = os.getenv("FLUX_ENDPOINT") or os.getenv("AZURE_OPENAI_ENDPOINT")
-        flux_key = os.getenv("FLUX_KEY") or os.getenv("AZURE_OPENAI_KEY")
-        flux_api_version = os.getenv("FLUX_API_VERSION") or "2025-01-01-preview"
+def _chat_with_openai(model: str, messages: list[dict[str, str]]) -> dict[str, str]:
+    client, config = _resolve_model_client(model)
+    kind = config["kind"]
 
-        flux_client = AzureOpenAI(
-            api_key=flux_key,
-            azure_endpoint=flux_endpoint,
-            api_version=flux_api_version,
-        )
+    if kind == "chat_completions":
+        response = client.chat.completions.create(model=model, messages=messages)
+        text = response.choices[0].message.content or ""
+        return {"type": "text", "text": text}
 
-        response = flux_client.responses.create(model=model, input=messages)
-        return response.output_text or "Model returned non-text output. This chat UI supports text replies only."
+    response = client.responses.create(model=model, input=messages)
+    text = getattr(response, "output_text", "") or ""
+    if text:
+        return {"type": "text", "text": text}
 
-    response = client.chat.completions.create(model=model, messages=messages)
-    return response.choices[0].message.content or ""
+    image_url = _extract_image_from_response(response)
+    if image_url:
+        return {"type": "image", "imageUrl": image_url}
+
+    return {"type": "text", "text": "Model returned no displayable output."}
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
@@ -238,19 +282,32 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if not prompt:
         return _json_response({"error": "Prompt is required."}, 400)
 
-    if model not in {"gpt-35-turbo", "gpt-5-chat", "model-router", "FLUX.1-Kontext-pro"}:
+    if model not in MODEL_REGISTRY:
         return _json_response({"error": "Unsupported model."}, 400)
 
     try:
         messages = _build_messages(history, prompt)
-        reply = _chat_with_openai(model, messages)
+        model_result = _chat_with_openai(model, messages)
     except Exception as ex:
         return _json_response({"error": f"OpenAI call failed: {str(ex)}"}, 500)
+
+    reply_type = model_result.get("type", "text")
+    reply_text = model_result.get("text", "")
+    image_url = model_result.get("imageUrl")
+
+    assistant_history_content = reply_text or ("[image generated]" if image_url else "")
 
     updated_history = [
         *history,
         {"role": "user", "content": prompt},
-        {"role": "assistant", "content": reply},
+        {"role": "assistant", "content": assistant_history_content},
     ]
 
-    return _json_response({"reply": reply, "conversationHistory": updated_history})
+    return _json_response(
+        {
+            "reply": reply_text,
+            "replyType": reply_type,
+            "imageUrl": image_url,
+            "conversationHistory": updated_history,
+        }
+    )

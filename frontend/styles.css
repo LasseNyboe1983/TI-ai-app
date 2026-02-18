@@ -81,6 +81,12 @@ h1 {
   background: #fef3c7;
 }
 
+.msg-image {
+  max-width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
 form {
   display: grid;
   grid-template-columns: 1fr auto;
