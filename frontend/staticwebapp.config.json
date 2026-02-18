@@ -1,26 +1,16 @@
 {
   "routes": [
     {
-      "route": "/signed-out.html",
-      "allowedRoles": ["anonymous"]
-    },
-    {
-      "route": "/signed-out-full.html",
-      "allowedRoles": ["anonymous"]
-    },
-    {
-      "route": "/api/*",
-      "allowedRoles": ["authenticated"]
-    },
-    {
       "route": "/*",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["maintenance-lock"]
     }
   ],
   "responseOverrides": {
     "401": {
-      "statusCode": 302,
-      "redirect": "/.auth/login/aad"
+      "statusCode": 403
+    },
+    "403": {
+      "statusCode": 403
     }
   }
 }

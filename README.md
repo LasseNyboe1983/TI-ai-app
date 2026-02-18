@@ -47,3 +47,12 @@ Add this repository secret before first deploy:
 3. Sign in with allowed user.
 4. Verify chat page loads and can send a prompt.
 5. Sign in with disallowed user and verify `/api/chat` returns `403`.
+
+## 5) Current maintenance state
+This repo is currently set to maintenance mode:
+
+- `frontend/staticwebapp.config.json` denies all routes
+- `frontend/index.html` shows a maintenance message
+- API functions return `503 Service Unavailable`
+
+Deploy to apply maintenance mode to the live app.
