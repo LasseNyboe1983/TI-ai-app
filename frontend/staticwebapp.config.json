@@ -1,7 +1,11 @@
 {
   "routes": [
     {
-      "route": "/",
+      "route": "/signed-out.html",
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/*",
       "allowedRoles": ["authenticated"]
     },
     {

@@ -16,5 +16,16 @@
         If your browser signs you in automatically, open a private window or sign out from Microsoft account session too.
       </p>
     </main>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const fullLogout = params.get('full') === '1';
+      const done = params.get('done') === '1';
+
+      if (fullLogout && !done) {
+        const returnUrl = `${window.location.origin}/signed-out.html?done=1`;
+        const aadLogoutUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(returnUrl)}`;
+        window.location.replace(aadLogoutUrl);
+      }
+    </script>
   </body>
 </html>
