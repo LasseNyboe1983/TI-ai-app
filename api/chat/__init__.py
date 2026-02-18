@@ -4,7 +4,7 @@ import base64
 from typing import Any
 
 import azure.functions as func
-from openai import AzureOpenAI
+from openai import AzureOpenAI, OpenAI
 
 
 REQUIRED_ENV_VARS = ["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_KEY"]
@@ -186,6 +186,15 @@ def _resolve_model_client(model: str) -> tuple[AzureOpenAI, dict[str, str]]:
     return client, config
 
 
+def _normalize_openai_base_url(url: str) -> str:
+    raw = (url or "").strip().rstrip("/")
+    if raw.endswith("/openai/v1"):
+        return raw + "/"
+    if raw.endswith("/openai/v1/"):
+        return raw
+    return raw + "/openai/v1/"
+
+
 def _extract_image_from_response(response: Any) -> str | None:
     output = getattr(response, "output", None) or []
     for block in output:
@@ -237,7 +246,21 @@ def _chat_with_openai(model: str, messages: list[dict[str, str]]) -> dict[str, s
 
     if kind == "images_generate":
         prompt = _latest_user_prompt(messages)
-        response = client.images.generate(model=model, prompt=prompt)
+        flux_endpoint = os.getenv("FLUX_ENDPOINT") or os.getenv("AZURE_OPENAI_ENDPOINT") or ""
+        flux_key = os.getenv("FLUX_KEY") or os.getenv("AZURE_OPENAI_KEY")
+        flux_base_url = _normalize_openai_base_url(flux_endpoint)
+
+        flux_client = OpenAI(
+            base_url=flux_base_url,
+            api_key=flux_key,
+        )
+
+        response = flux_client.images.generate(
+            model=model,
+            prompt=prompt,
+            n=1,
+            size="1024x1024",
+        )
         image_url = _extract_image_from_images_api_response(response)
         if image_url:
             return {"type": "image", "imageUrl": image_url}

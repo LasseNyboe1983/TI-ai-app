@@ -21,7 +21,7 @@ Optional (if `model-router` uses a separate endpoint/key/version):
 
 Optional (if `FLUX.1-Kontext-pro` uses a separate endpoint/key/version):
 
-- `FLUX_ENDPOINT`
+- `FLUX_ENDPOINT` (resource endpoint like `https://<resource>.openai.azure.com/` or full `.../openai/v1/`)
 - `FLUX_KEY`
 - `FLUX_API_VERSION` (default: `2025-04-01-preview`)
 
