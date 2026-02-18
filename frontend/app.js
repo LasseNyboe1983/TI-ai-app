@@ -4,6 +4,7 @@ const promptEl = document.getElementById('prompt');
 const chatEl = document.getElementById('chat');
 const sendBtn = document.getElementById('sendBtn');
 const modelEl = document.getElementById('model');
+const signOutLink = document.getElementById('signOutLink');
 
 let conversationHistory = [];
 
@@ -29,6 +30,12 @@ function addMessage(role, text) {
   node.textContent = text;
   chatEl.appendChild(node);
   chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function buildFullLogoutUrl() {
+  const returnUrl = `${window.location.origin}/signed-out.html`;
+  const aadLogoutUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(returnUrl)}`;
+  return `/.auth/logout?post_logout_redirect_uri=${encodeURIComponent(aadLogoutUrl)}`;
 }
 
 async function loadUser() {
@@ -106,3 +113,10 @@ form.addEventListener('submit', async (event) => {
 });
 
 loadUser();
+
+if (signOutLink) {
+  signOutLink.addEventListener('click', (event) => {
+    event.preventDefault();
+    window.location.assign(buildFullLogoutUrl());
+  });
+}
