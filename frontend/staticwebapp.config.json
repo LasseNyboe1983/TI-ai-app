@@ -5,6 +5,10 @@
       "allowedRoles": ["anonymous"]
     },
     {
+      "route": "/signed-out-full.html",
+      "allowedRoles": ["anonymous"]
+    },
+    {
       "route": "/*",
       "allowedRoles": ["authenticated"]
     },

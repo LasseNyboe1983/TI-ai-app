@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signing Out…</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <div class="msg system">Signing you out from Microsoft Entra ID…</div>
+    </main>
+    <script>
+      const returnUrl = `${window.location.origin}/signed-out.html`;
+      const aadLogoutUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(returnUrl)}`;
+      window.location.replace(aadLogoutUrl);
+    </script>
+  </body>
+</html>
