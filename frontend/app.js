@@ -42,7 +42,8 @@ async function loadUser() {
     const payload = await res.json();
     const principal = payload?.clientPrincipal;
     if (!principal) {
-      statusEl.textContent = 'Not signed in. Use Microsoft Entra login.';
+      statusEl.textContent = 'Not signed in. Redirecting to Microsoft Entra login...';
+      window.location.replace('/.auth/login/aad?post_login_redirect_uri=/');
       return;
     }
 
