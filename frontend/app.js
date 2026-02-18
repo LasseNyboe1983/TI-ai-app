@@ -4,6 +4,7 @@ const promptEl = document.getElementById('prompt');
 const chatEl = document.getElementById('chat');
 const sendBtn = document.getElementById('sendBtn');
 const modelEl = document.getElementById('model');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
 let conversationHistory = [];
 
@@ -105,5 +106,12 @@ form.addEventListener('submit', async (event) => {
     sendBtn.disabled = false;
   }
 });
+
+if (clearHistoryBtn) {
+  clearHistoryBtn.addEventListener('click', () => {
+    conversationHistory = [];
+    chatEl.innerHTML = '';
+  });
+}
 
 loadUser();

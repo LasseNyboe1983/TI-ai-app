@@ -44,6 +44,12 @@ h1 {
   padding: 16px;
 }
 
+.chat-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin: 8px 0;
+}
+
 .msg {
   padding: 10px 12px;
   border-radius: 10px;
