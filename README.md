@@ -19,6 +19,12 @@ Optional (if `model-router` uses a separate endpoint/key/version):
 - `MODEL_ROUTER_KEY`
 - `MODEL_ROUTER_API_VERSION` (default: `2025-01-01-preview`)
 
+Optional (if `FLUX.1-Kontext-pro` uses a separate endpoint/key/version):
+
+- `FLUX_ENDPOINT`
+- `FLUX_KEY`
+- `FLUX_API_VERSION` (default: `2025-01-01-preview`)
+
 ## 2) Authentication provider
 In Static Web App Authentication:
 - Add Microsoft Entra ID provider

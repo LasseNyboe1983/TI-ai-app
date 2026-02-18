@@ -162,6 +162,20 @@ def _chat_with_openai(model: str, messages: list[dict[str, str]]) -> str:
         response = model_router_client.chat.completions.create(model=model, messages=messages)
         return response.choices[0].message.content or ""
 
+    if model == "FLUX.1-Kontext-pro":
+        flux_endpoint = os.getenv("FLUX_ENDPOINT") or os.getenv("AZURE_OPENAI_ENDPOINT")
+        flux_key = os.getenv("FLUX_KEY") or os.getenv("AZURE_OPENAI_KEY")
+        flux_api_version = os.getenv("FLUX_API_VERSION") or "2025-01-01-preview"
+
+        flux_client = AzureOpenAI(
+            api_key=flux_key,
+            azure_endpoint=flux_endpoint,
+            api_version=flux_api_version,
+        )
+
+        response = flux_client.responses.create(model=model, input=messages)
+        return response.output_text or "Model returned non-text output. This chat UI supports text replies only."
+
     response = client.chat.completions.create(model=model, messages=messages)
     return response.choices[0].message.content or ""
 
@@ -224,7 +238,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if not prompt:
         return _json_response({"error": "Prompt is required."}, 400)
 
-    if model not in {"gpt-35-turbo", "gpt-5-chat", "model-router"}:
+    if model not in {"gpt-35-turbo", "gpt-5-chat", "model-router", "FLUX.1-Kontext-pro"}:
         return _json_response({"error": "Unsupported model."}, 400)
 
     try:
