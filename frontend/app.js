@@ -41,7 +41,12 @@ async function loadUser() {
 
     const payload = await res.json();
     const principal = payload?.clientPrincipal;
-    const username = principal?.userDetails || 'Authenticated user';
+    if (!principal) {
+      statusEl.textContent = 'Not signed in. Use Microsoft Entra login.';
+      return;
+    }
+
+    const username = principal.userDetails || 'Authenticated user';
     const claims = principal?.claims || [];
     const provider = principal?.identityProvider || 'unknown';
     const tenant =
