@@ -7,6 +7,22 @@ const modelEl = document.getElementById('model');
 
 let conversationHistory = [];
 
+function getClaim(claims, keys) {
+  if (!Array.isArray(claims)) return null;
+  for (const key of keys) {
+    const match = claims.find((c) => c?.typ === key && c?.val);
+    if (match?.val) return match.val;
+  }
+  return null;
+}
+
+function tenantFromIssuer(issuer) {
+  if (!issuer || typeof issuer !== 'string') return null;
+  const marker = 'login.microsoftonline.com/';
+  if (!issuer.includes(marker)) return null;
+  return issuer.split(marker)[1]?.split('/')[0] || null;
+}
+
 function addMessage(role, text) {
   const node = document.createElement('div');
   node.className = `msg ${role}`;
@@ -26,7 +42,14 @@ async function loadUser() {
     const payload = await res.json();
     const principal = payload?.clientPrincipal;
     const username = principal?.userDetails || 'Authenticated user';
-    statusEl.textContent = `Signed in as ${username}`;
+    const claims = principal?.claims || [];
+    const provider = principal?.identityProvider || 'unknown';
+    const tenant =
+      getClaim(claims, ['tid', 'http://schemas.microsoft.com/identity/claims/tenantid', 'tenantid']) ||
+      tenantFromIssuer(getClaim(claims, ['iss'])) ||
+      'missing';
+
+    statusEl.textContent = `Signed in as ${username} | provider=${provider} | tenant=${tenant}`;
   } catch {
     statusEl.textContent = 'Unable to read authentication session.';
   }
@@ -56,7 +79,11 @@ form.addEventListener('submit', async (event) => {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      addMessage('system', data.error || 'Request failed.');
+      const details = [];
+      if (data.expectedTenant) details.push(`expected=${data.expectedTenant}`);
+      if (data.actualTenant) details.push(`actual=${data.actualTenant}`);
+      const detailText = details.length ? ` (${details.join(', ')})` : '';
+      addMessage('system', (data.error || 'Request failed.') + detailText);
       return;
     }
 
