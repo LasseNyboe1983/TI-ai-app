@@ -9,7 +9,10 @@
   <body>
     <main class="container">
       <div class="header">
-        <h1>TI AI Chat Hub</h1>
+        <div class="title-row">
+          <h1>TI AI Chat Hub</h1>
+          <span id="userInfo"></span>
+        </div>
         <div class="controls">
           <label for="model">Model</label>
           <select id="model">
@@ -17,11 +20,10 @@
             <option value="gpt-5-chat">gpt-5-chat</option>
             <option value="model-router">model-router</option>
           </select>
-          <a href="/.auth/logout?post_logout_redirect_uri=%2Fsigned-out-full.html">Sign out</a>
+          <button id="signOutBtn" type="button">Sign out</button>
         </div>
       </div>
 
-      <div id="status" class="msg system">Loading user…</div>
       <div class="chat-actions">
         <button id="clearHistoryBtn" type="button">Clear Chat History</button>
       </div>

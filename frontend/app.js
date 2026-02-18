@@ -1,10 +1,11 @@
-const statusEl = document.getElementById('status');
+const userInfoEl = document.getElementById('userInfo');
 const form = document.getElementById('promptForm');
 const promptEl = document.getElementById('prompt');
 const chatEl = document.getElementById('chat');
 const sendBtn = document.getElementById('sendBtn');
 const modelEl = document.getElementById('model');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+const signOutBtn = document.getElementById('signOutBtn');
 
 let conversationHistory = [];
 
@@ -36,29 +37,22 @@ async function loadUser() {
   try {
     const res = await fetch('/.auth/me', { credentials: 'include' });
     if (!res.ok) {
-      statusEl.textContent = 'Authentication session not available.';
+      if (userInfoEl) userInfoEl.textContent = '';
       return;
     }
 
     const payload = await res.json();
     const principal = payload?.clientPrincipal;
     if (!principal) {
-      statusEl.textContent = 'Not signed in. Redirecting to Microsoft Entra login...';
+      if (userInfoEl) userInfoEl.textContent = '';
       window.location.replace('/.auth/login/aad?post_login_redirect_uri=/');
       return;
     }
 
-    const username = principal.userDetails || 'Authenticated user';
-    const claims = principal?.claims || [];
-    const provider = principal?.identityProvider || 'unknown';
-    const tenant =
-      getClaim(claims, ['tid', 'http://schemas.microsoft.com/identity/claims/tenantid', 'tenantid']) ||
-      tenantFromIssuer(getClaim(claims, ['iss'])) ||
-      'missing';
-
-    statusEl.textContent = `Signed in as ${username} | provider=${provider} | tenant=${tenant}`;
+    const username = principal.userDetails || '';
+    if (userInfoEl) userInfoEl.textContent = username;
   } catch {
-    statusEl.textContent = 'Unable to read authentication session.';
+    if (userInfoEl) userInfoEl.textContent = '';
   }
 }
 
@@ -111,6 +105,12 @@ if (clearHistoryBtn) {
   clearHistoryBtn.addEventListener('click', () => {
     conversationHistory = [];
     chatEl.innerHTML = '';
+  });
+}
+
+if (signOutBtn) {
+  signOutBtn.addEventListener('click', () => {
+    window.location.assign('/.auth/logout?post_logout_redirect_uri=%2Fsigned-out-full.html');
   });
 }
 
