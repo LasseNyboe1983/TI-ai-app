@@ -10,6 +10,19 @@ from openai import AzureOpenAI
 REQUIRED_ENV_VARS = ["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_KEY"]
 
 
+def _tenant_from_issuer(issuer: str | None) -> str | None:
+    if not issuer:
+        return None
+
+    marker = "login.microsoftonline.com/"
+    if marker not in issuer:
+        return None
+
+    tail = issuer.split(marker, 1)[1]
+    tenant = tail.split("/", 1)[0].strip().lower()
+    return tenant or None
+
+
 def _json_response(payload: dict[str, Any], status_code: int = 200) -> func.HttpResponse:
     return func.HttpResponse(
         json.dumps(payload),
@@ -53,6 +66,8 @@ def _extract_identity(req: func.HttpRequest) -> tuple[str | None, str | None, st
             "tenantid",
         ],
     )
+    if not tenant_id:
+        tenant_id = _tenant_from_issuer(_first_claim(claims, ["iss"]))
     user_upn = (
         _first_claim(
             claims,
@@ -96,6 +111,8 @@ def _extract_identity_from_aad_tokens(req: func.HttpRequest) -> tuple[str | None
         return None, None
 
     tenant_id = payload.get("tid")
+    if not tenant_id:
+        tenant_id = _tenant_from_issuer(str(payload.get("iss") or ""))
     user_upn = (
         payload.get("preferred_username")
         or payload.get("upn")
@@ -158,11 +175,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response({"error": "Access denied: Microsoft Entra sign-in required."}, 403)
 
     if allowed_tenant_id and (tenant_id or "").lower() != allowed_tenant_id:
+        actual_tenant = (tenant_id or "missing")
         return _json_response(
             {
-                "error": "Access denied: wrong tenant.",
+                "error": f"Access denied: wrong tenant. expected={allowed_tenant_id} actual={actual_tenant}",
                 "expectedTenant": allowed_tenant_id,
-                "actualTenant": (tenant_id or "missing"),
+                "actualTenant": actual_tenant,
             },
             403,
         )
