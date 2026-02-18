@@ -23,7 +23,7 @@ Optional (if `FLUX.1-Kontext-pro` uses a separate endpoint/key/version):
 
 - `FLUX_ENDPOINT`
 - `FLUX_KEY`
-- `FLUX_API_VERSION` (default: `2025-01-01-preview`)
+- `FLUX_API_VERSION` (default: `2025-03-01-preview`)
 
 ## 2) Authentication provider
 In Static Web App Authentication:

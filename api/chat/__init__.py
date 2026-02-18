@@ -37,7 +37,7 @@ MODEL_REGISTRY = {
         "key_env": "FLUX_KEY",
         "fallback_endpoint_env": "AZURE_OPENAI_ENDPOINT",
         "fallback_key_env": "AZURE_OPENAI_KEY",
-        "api_version": "2025-01-01-preview",
+        "api_version": "2025-03-01-preview",
         "api_version_env": "FLUX_API_VERSION",
     },
 }
