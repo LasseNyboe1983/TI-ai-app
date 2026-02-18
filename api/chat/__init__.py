@@ -24,10 +24,18 @@ def _get_claim(claims: list[dict[str, str]], key: str) -> str | None:
     return None
 
 
-def _extract_identity(req: func.HttpRequest) -> tuple[str | None, str | None]:
+def _first_claim(claims: list[dict[str, str]], keys: list[str]) -> str | None:
+    for key in keys:
+        value = _get_claim(claims, key)
+        if value:
+            return value
+    return None
+
+
+def _extract_identity(req: func.HttpRequest) -> tuple[str | None, str | None, str | None]:
     raw = req.headers.get("x-ms-client-principal")
     if not raw:
-        return None, None
+        return None, None, None
 
     try:
         import base64
@@ -35,16 +43,32 @@ def _extract_identity(req: func.HttpRequest) -> tuple[str | None, str | None]:
         decoded = base64.b64decode(raw).decode("utf-8")
         principal = json.loads(decoded)
     except Exception:
-        return None, None
+        return None, None, None
 
     claims = principal.get("claims", [])
-    tenant_id = _get_claim(claims, "tid")
+    tenant_id = _first_claim(
+        claims,
+        [
+            "tid",
+            "http://schemas.microsoft.com/identity/claims/tenantid",
+            "tenantid",
+        ],
+    )
     user_upn = (
-        _get_claim(claims, "preferred_username")
-        or _get_claim(claims, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn")
+        _first_claim(
+            claims,
+            [
+                "preferred_username",
+                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn",
+                "upn",
+                "email",
+                "name",
+            ],
+        )
         or principal.get("userDetails")
     )
-    return tenant_id, (user_upn.lower() if user_upn else None)
+    provider = principal.get("identityProvider")
+    return tenant_id, (user_upn.lower() if user_upn else None), provider
 
 
 def _validate_env() -> str | None:
@@ -80,7 +104,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if env_error:
         return _json_response({"error": env_error}, 500)
 
-    tenant_id, user_upn = _extract_identity(req)
+    tenant_id, user_upn, provider = _extract_identity(req)
 
     allowed_tenant_id = (os.getenv("ALLOWED_TENANT_ID") or "").strip().lower()
     allowed_users = {
@@ -88,6 +112,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         for user in (os.getenv("ALLOWED_USERS") or "").split(",")
         if user.strip()
     }
+
+    if provider and provider.lower() != "aad":
+        return _json_response({"error": "Access denied: Microsoft Entra sign-in required."}, 403)
 
     if allowed_tenant_id and (tenant_id or "").lower() != allowed_tenant_id:
         return _json_response({"error": "Access denied: wrong tenant."}, 403)
