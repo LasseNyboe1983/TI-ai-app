@@ -13,6 +13,12 @@ Set these in Azure Static Web App Configuration:
 - `ALLOWED_TENANT_ID` (example: your Entra tenant GUID)
 - `ALLOWED_USERS` (comma-separated UPN list, example: `user014@undervis.nu`)
 
+Optional (if `model-router` uses a separate endpoint/key/version):
+
+- `MODEL_ROUTER_ENDPOINT`
+- `MODEL_ROUTER_KEY`
+- `MODEL_ROUTER_API_VERSION` (default: `2025-01-01-preview`)
+
 ## 2) Authentication provider
 In Static Web App Authentication:
 - Add Microsoft Entra ID provider

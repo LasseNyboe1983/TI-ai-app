@@ -145,9 +145,22 @@ def _chat_with_openai(model: str, messages: list[dict[str, str]]) -> str:
         api_version="2025-03-01-preview",
     )
 
-    if model in {"gpt-5-chat", "model-router"}:
+    if model == "gpt-5-chat":
         response = client.responses.create(model=model, input=messages)
         return response.output_text or ""
+
+    if model == "model-router":
+        model_router_endpoint = os.getenv("MODEL_ROUTER_ENDPOINT") or os.getenv("AZURE_OPENAI_ENDPOINT")
+        model_router_key = os.getenv("MODEL_ROUTER_KEY") or os.getenv("AZURE_OPENAI_KEY")
+        model_router_api_version = os.getenv("MODEL_ROUTER_API_VERSION") or "2025-01-01-preview"
+
+        model_router_client = AzureOpenAI(
+            api_key=model_router_key,
+            azure_endpoint=model_router_endpoint,
+            api_version=model_router_api_version,
+        )
+        response = model_router_client.chat.completions.create(model=model, messages=messages)
+        return response.choices[0].message.content or ""
 
     response = client.chat.completions.create(model=model, messages=messages)
     return response.choices[0].message.content or ""
