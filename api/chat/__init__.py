@@ -256,14 +256,40 @@ def _build_image_prompt(messages: list[dict[str, str]]) -> str:
     document_context = _latest_document_context(messages)[:MAX_IMAGE_CONTEXT_CHARS]
 
     if not document_context:
-        return user_prompt
+        return (
+            "Generate a safe, non-violent image based on this request. "
+            "Do not depict graphic harm, gore, or violent acts.\n\n"
+            f"User request:\n{user_prompt}"
+        )
 
     return (
         "Create an image based on the user request and the attached document context. "
-        "Prioritize concrete details found in the document context.\n\n"
+        "Prioritize concrete details found in the document context. "
+        "The final image must be safe and non-violent.\n\n"
         f"Document context:\n{document_context}\n\n"
         f"User request:\n{user_prompt}"
     )
+
+
+def _map_openai_error(ex: Exception) -> tuple[str, int]:
+    error_text = str(ex)
+    lowered = error_text.lower()
+
+    if "violence detection" in lowered:
+        return (
+            "Image request was blocked by safety filters for violence. "
+            "Try a safer prompt without violence, combat, weapons, injury, or gore.",
+            400,
+        )
+
+    if "content rejected" in lowered or "content filter" in lowered or "content policy" in lowered:
+        return (
+            "Request was blocked by model safety filters. "
+            "Please rephrase using neutral, non-harmful language and try again.",
+            400,
+        )
+
+    return (f"OpenAI call failed: {error_text}", 500)
 
 
 def _extract_image_from_images_api_response(response: Any) -> str | None:
@@ -391,7 +417,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         messages = _build_messages(history, prompt, document_context)
         model_result = _chat_with_openai(model, messages)
     except Exception as ex:
-        return _json_response({"error": f"OpenAI call failed: {str(ex)}"}, 500)
+        error_message, status_code = _map_openai_error(ex)
+        return _json_response({"error": error_message}, status_code)
 
     reply_type = model_result.get("type", "text")
     reply_text = model_result.get("text", "")
