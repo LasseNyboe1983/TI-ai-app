@@ -124,26 +124,35 @@ button {
 
 .model-selector {
   position: relative;
-  min-width: 230px;
+  min-width: 320px;
+  max-width: min(100%, 420px);
 }
 
 #modelToggleBtn {
-  min-width: 230px;
+  min-width: 320px;
   width: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 #modelDescription {
   color: #94a3b8;
   font-weight: 500;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 #modelName {
   color: #0f172a;
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 #modelMenu {
@@ -168,6 +177,7 @@ button {
   justify-content: space-between;
   align-items: center;
   padding: 8px 10px;
+  white-space: nowrap;
 }
 
 .model-item:hover,
@@ -178,11 +188,18 @@ button {
 .model-item-description {
   color: #94a3b8;
   font-weight: 500;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .model-item-name {
   color: #0f172a;
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  text-align: right;
 }
 
 textarea {
@@ -275,7 +292,8 @@ button:disabled {
 
   .model-selector,
   #modelToggleBtn {
-    min-width: 200px;
+    min-width: 260px;
+    width: min(100%, 360px);
   }
 
   select {
