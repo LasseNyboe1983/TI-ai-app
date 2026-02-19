@@ -47,6 +47,13 @@ function addImageMessage(role, imageUrl) {
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
+function formatModelType(type) {
+  const rawType = String(type || '').trim().toLowerCase();
+  if (!rawType) return 'Model';
+  if (rawType === 'image') return 'Picture';
+  return rawType.charAt(0).toUpperCase() + rawType.slice(1);
+}
+
 async function loadModels() {
   try {
     const response = await fetch('/api/models', { credentials: 'include' });
@@ -57,21 +64,22 @@ async function loadModels() {
     for (const model of models) {
       const option = document.createElement('option');
       option.value = model.id;
-      option.textContent = model.label || model.id;
+      const typeLabel = formatModelType(model.type);
+      option.textContent = `${typeLabel} - ${model.label || model.id}`;
       modelEl.appendChild(option);
     }
 
     if (!modelEl.options.length) {
       const fallback = document.createElement('option');
       fallback.value = 'gpt-35-turbo';
-      fallback.textContent = 'gpt-35-turbo';
+      fallback.textContent = 'Chat - gpt-35-turbo';
       modelEl.appendChild(fallback);
     }
   } catch {
     modelEl.innerHTML = '';
     const fallback = document.createElement('option');
     fallback.value = 'gpt-35-turbo';
-    fallback.textContent = 'gpt-35-turbo';
+    fallback.textContent = 'Chat - gpt-35-turbo';
     modelEl.appendChild(fallback);
   }
 }

@@ -4,10 +4,10 @@ import azure.functions as func
 
 
 MODELS = [
-    {"id": "gpt-35-turbo", "label": "gpt-35-turbo", "type": "text"},
-    {"id": "gpt-5-chat", "label": "gpt-5-chat", "type": "text"},
-    {"id": "model-router", "label": "model-router", "type": "text"},
-    {"id": "FLUX.1-Kontext-pro", "label": "FLUX.1-Kontext-pro", "type": "image"},
+    {"id": "gpt-35-turbo", "label": "gpt-35-turbo", "type": "chat"},
+    {"id": "gpt-5-chat", "label": "gpt-5-chat", "type": "chat"},
+    {"id": "model-router", "label": "model-router", "type": "chat"},
+    {"id": "FLUX.1-Kontext-pro", "label": "FLUX.1-Kontext-pro", "type": "picture"},
 ]
 
 
