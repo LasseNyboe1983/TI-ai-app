@@ -3,45 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TI AI Chat Hub</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <title>Maintenance</title>
   </head>
   <body>
-    <main class="container">
-      <div class="top-actions">
-        <button id="signOutBtn" type="button">Sign out</button>
-      </div>
-
-      <header class="header">
-        <h1>TI AI Chat Hub</h1>
-        <span id="userInfo"></span>
-        <div class="controls">
-          <label for="modelToggleBtn">Model</label>
-          <div class="model-selector">
-            <button id="modelToggleBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
-              <span id="modelDescription"></span>
-              <span id="modelName"></span>
-            </button>
-            <div id="modelMenu" role="listbox" hidden></div>
-          </div>
-          <select id="model" name="model" hidden aria-hidden="true"></select>
-        </div>
-      </header>
-
-      <section id="chat" aria-live="polite"></section>
-
-      <div class="chat-actions">
-        <button id="attachDocBtn" type="button">Attach document</button>
-        <input id="docFileInput" type="file" accept=".pdf,.docx,.txt,.md" hidden />
-        <span id="docStatus" aria-live="polite"></span>
-        <button id="clearHistoryBtn" type="button">Clear chat</button>
-      </div>
-
-      <form id="promptForm">
-        <textarea id="prompt" name="prompt" placeholder="Type your message..." required></textarea>
-        <button id="sendBtn" type="submit">Send</button>
-      </form>
+    <main>
+      <h1>Maintenance mode</h1>
+      <p>This site is temporarily unavailable.</p>
     </main>
-    <script src="/app.js"></script>
   </body>
 </html>

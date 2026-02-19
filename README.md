@@ -55,9 +55,11 @@ Add this repository secret before first deploy:
 - Document data is held only in current chat page state.
 - Document context is cleared when **Clear chat** or **Sign out** is used.
 
-## 5) Current state
-This repo is configured for normal operation:
+## 5) Current maintenance state
+This repo is currently set to maintenance mode:
 
-- `frontend/staticwebapp.config.json` requires sign-in for app routes
-- `frontend/index.html` serves the chat UI
-- API functions are active for `/api/chat` and `/api/models`
+- `frontend/staticwebapp.config.json` denies all routes
+- `frontend/index.html` shows a maintenance message
+- API functions return `503 Service Unavailable`
+
+Deploy to apply maintenance mode to the live app.

@@ -352,6 +352,13 @@ def _chat_with_openai(model: str, messages: list[dict[str, str]]) -> dict[str, s
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
+    return _json_response(
+        {
+            "error": "Service temporarily unavailable: maintenance mode is active."
+        },
+        503,
+    )
+
     env_error = _validate_env()
     if env_error:
         return _json_response({"error": env_error}, 500)

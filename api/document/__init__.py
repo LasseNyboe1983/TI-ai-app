@@ -81,6 +81,13 @@ def _chunk_text(text: str) -> list[str]:
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
+    return _json_response(
+        {
+            "error": "Service temporarily unavailable: maintenance mode is active."
+        },
+        503,
+    )
+
     try:
         body = req.get_json()
     except ValueError:
