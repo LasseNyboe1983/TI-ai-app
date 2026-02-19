@@ -9,6 +9,7 @@ from openai import AzureOpenAI, OpenAI
 
 REQUIRED_ENV_VARS = ["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_KEY"]
 MAX_DOCUMENT_CONTEXT_CHARS = 12000
+MAX_IMAGE_CONTEXT_CHARS = 5000
 
 MODEL_REGISTRY = {
     "gpt-35-turbo": {
@@ -239,6 +240,32 @@ def _latest_user_prompt(messages: list[dict[str, str]]) -> str:
     return ""
 
 
+def _latest_document_context(messages: list[dict[str, str]]) -> str:
+    marker = "Document context:"
+    for message in reversed(messages):
+        if message.get("role") != "system":
+            continue
+        content = str(message.get("content") or "")
+        if marker in content:
+            return content.split(marker, 1)[1].strip()
+    return ""
+
+
+def _build_image_prompt(messages: list[dict[str, str]]) -> str:
+    user_prompt = _latest_user_prompt(messages)
+    document_context = _latest_document_context(messages)[:MAX_IMAGE_CONTEXT_CHARS]
+
+    if not document_context:
+        return user_prompt
+
+    return (
+        "Create an image based on the user request and the attached document context. "
+        "Prioritize concrete details found in the document context.\n\n"
+        f"Document context:\n{document_context}\n\n"
+        f"User request:\n{user_prompt}"
+    )
+
+
 def _extract_image_from_images_api_response(response: Any) -> str | None:
     data = getattr(response, "data", None) or []
     if not data:
@@ -265,7 +292,7 @@ def _chat_with_openai(model: str, messages: list[dict[str, str]]) -> dict[str, s
         return {"type": "text", "text": text}
 
     if kind == "images_generate":
-        prompt = _latest_user_prompt(messages)
+        prompt = _build_image_prompt(messages)
         flux_endpoint = os.getenv("FLUX_ENDPOINT") or os.getenv("AZURE_OPENAI_ENDPOINT") or ""
         flux_key = os.getenv("FLUX_KEY") or os.getenv("AZURE_OPENAI_KEY")
         flux_base_url = _normalize_openai_base_url(flux_endpoint)
