@@ -93,7 +93,7 @@ async function loadUser() {
     }
 
     const username = principal.userDetails || '';
-    if (userInfoEl) userInfoEl.textContent = username;
+    if (userInfoEl) userInfoEl.textContent = username ? `Welcome ${username}` : '';
   } catch {
     if (userInfoEl) userInfoEl.textContent = '';
   }
