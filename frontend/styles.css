@@ -122,6 +122,69 @@ button {
   font: inherit;
 }
 
+.model-selector {
+  position: relative;
+  min-width: 230px;
+}
+
+#modelToggleBtn {
+  min-width: 230px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#modelDescription {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+#modelName {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+#modelMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  padding: 4px;
+}
+
+.model-item {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+}
+
+.model-item:hover,
+.model-item[aria-selected='true'] {
+  background: #f1f5f9;
+}
+
+.model-item-description {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.model-item-name {
+  color: #0f172a;
+  font-weight: 700;
+}
+
 textarea {
   width: 100%;
   min-height: 72px;
@@ -208,6 +271,11 @@ button:disabled {
     justify-content: flex-start;
     flex: 1 1 100%;
     min-width: 0;
+  }
+
+  .model-selector,
+  #modelToggleBtn {
+    min-width: 200px;
   }
 
   select {

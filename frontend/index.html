@@ -12,8 +12,15 @@
         <h1>TI AI Chat Hub</h1>
         <span id="userInfo"></span>
         <div class="controls">
-          <label for="model">Model</label>
-          <select id="model" name="model"></select>
+          <label for="modelToggleBtn">Model</label>
+          <div class="model-selector">
+            <button id="modelToggleBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <span id="modelDescription"></span>
+              <span id="modelName"></span>
+            </button>
+            <div id="modelMenu" role="listbox" hidden></div>
+          </div>
+          <select id="model" name="model" hidden aria-hidden="true"></select>
           <button id="signOutBtn" type="button">Sign out</button>
         </div>
       </header>
