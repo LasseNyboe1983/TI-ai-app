@@ -8,10 +8,17 @@ const modelToggleBtn = document.getElementById('modelToggleBtn');
 const modelMenuEl = document.getElementById('modelMenu');
 const modelDescriptionEl = document.getElementById('modelDescription');
 const modelNameEl = document.getElementById('modelName');
+const attachDocBtn = document.getElementById('attachDocBtn');
+const docFileInput = document.getElementById('docFileInput');
+const docStatusEl = document.getElementById('docStatus');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 const signOutBtn = document.getElementById('signOutBtn');
 
 let conversationHistory = [];
+let attachedDocument = null;
+
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_CONTEXT_CHUNKS = 4;
 
 function getClaim(claims, keys) {
   if (!Array.isArray(claims)) return null;
@@ -56,6 +63,118 @@ function formatModelType(type) {
   if (!rawType) return 'Model';
   if (rawType === 'image') return 'Picture';
   return rawType.charAt(0).toUpperCase() + rawType.slice(1);
+}
+
+function setDocumentStatus(text, isError = false) {
+  if (!docStatusEl) return;
+  docStatusEl.textContent = text || '';
+  docStatusEl.style.color = isError ? '#b91c1c' : '#64748b';
+}
+
+function clearAttachedDocument() {
+  attachedDocument = null;
+  setDocumentStatus('');
+}
+
+function buildWordSet(value) {
+  const words = String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length > 2);
+  return new Set(words);
+}
+
+function pickRelevantChunks(prompt, chunks) {
+  const promptWords = buildWordSet(prompt);
+  if (!promptWords.size) return chunks.slice(0, MAX_CONTEXT_CHUNKS);
+
+  const scored = chunks.map((chunk, index) => {
+    const chunkWords = buildWordSet(chunk);
+    let overlap = 0;
+    for (const word of promptWords) {
+      if (chunkWords.has(word)) overlap += 1;
+    }
+    return { chunk, index, score: overlap };
+  });
+
+  return scored
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.index - b.index;
+    })
+    .slice(0, MAX_CONTEXT_CHUNKS)
+    .filter((item) => item.score > 0)
+    .map((item) => item.chunk);
+}
+
+function buildDocumentContext(prompt) {
+  if (!attachedDocument || !Array.isArray(attachedDocument.chunks) || !attachedDocument.chunks.length) {
+    return '';
+  }
+
+  const selectedChunks = pickRelevantChunks(prompt, attachedDocument.chunks);
+  const fallbackChunks = attachedDocument.chunks.slice(0, MAX_CONTEXT_CHUNKS);
+  const chunksToUse = selectedChunks.length ? selectedChunks : fallbackChunks;
+
+  return `Document: ${attachedDocument.fileName}\n\n${chunksToUse.join('\n\n---\n\n')}`;
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || '');
+      const payload = result.includes(',') ? result.split(',', 2)[1] : result;
+      resolve(payload);
+    };
+    reader.onerror = () => reject(new Error('Failed to read selected file.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadDocument(file) {
+  if (!file) return;
+
+  if (file.size > MAX_UPLOAD_BYTES) {
+    setDocumentStatus('File too large. Max size is 10 MB.', true);
+    return;
+  }
+
+  setDocumentStatus(`Uploading ${file.name}...`);
+
+  try {
+    const fileContentBase64 = await fileToBase64(file);
+    const response = await fetch('/api/document', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        fileName: file.name,
+        fileContentBase64,
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setDocumentStatus(data.error || 'Failed to process document.', true);
+      return;
+    }
+
+    attachedDocument = {
+      fileName: data.fileName || file.name,
+      chunks: Array.isArray(data.chunks) ? data.chunks : [],
+    };
+
+    if (!attachedDocument.chunks.length) {
+      setDocumentStatus('No usable text found in document.', true);
+      return;
+    }
+
+    setDocumentStatus(`Attached ${attachedDocument.fileName} (${data.chunkCount || attachedDocument.chunks.length} chunks)`);
+  } catch {
+    setDocumentStatus('Network or server error while uploading document.', true);
+  }
 }
 
 function renderSelectedModel() {
@@ -206,6 +325,7 @@ form.addEventListener('submit', async (event) => {
         prompt,
         model: modelEl.value,
         conversationHistory,
+        documentContext: buildDocumentContext(prompt),
       }),
     });
 
@@ -244,12 +364,26 @@ if (clearHistoryBtn) {
   clearHistoryBtn.addEventListener('click', () => {
     conversationHistory = [];
     chatEl.innerHTML = '';
+    clearAttachedDocument();
   });
 }
 
 if (signOutBtn) {
   signOutBtn.addEventListener('click', () => {
+    clearAttachedDocument();
     window.location.assign('/.auth/logout?post_logout_redirect_uri=%2Fsigned-out-full.html');
+  });
+}
+
+if (attachDocBtn && docFileInput) {
+  attachDocBtn.addEventListener('click', () => {
+    docFileInput.click();
+  });
+
+  docFileInput.addEventListener('change', async () => {
+    const file = docFileInput.files?.[0];
+    await uploadDocument(file);
+    docFileInput.value = '';
   });
 }
 

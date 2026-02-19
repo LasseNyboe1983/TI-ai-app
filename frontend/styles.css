@@ -80,8 +80,17 @@ h1 {
 
 .chat-actions {
   display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
   justify-content: flex-start;
   margin: 10px 0;
+}
+
+#docStatus {
+  color: #64748b;
+  font-size: 0.88rem;
+  min-height: 1.2em;
 }
 
 .msg {

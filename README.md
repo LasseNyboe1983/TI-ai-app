@@ -4,6 +4,7 @@ Minimal Azure Static Web Apps setup with:
 - Static frontend (`frontend/`)
 - Python API (`api/`) for Azure OpenAI calls
 - SWA authentication gate in `staticwebapp.config.json`
+- In-chat document attach (`PDF`, `DOCX`, `TXT`, `MD`) for context-aware chat
 
 ## 1) Required environment variables (SWA)
 Set these in Azure Static Web App Configuration:
@@ -47,6 +48,12 @@ Add this repository secret before first deploy:
 3. Sign in with allowed user.
 4. Verify chat page loads and can send a prompt.
 5. Sign in with disallowed user and verify `/api/chat` returns `403`.
+
+## 6) Document chat (current behavior)
+- Use **Attach document** in chat actions and select `PDF`, `DOCX`, `TXT`, or `MD`.
+- Maximum file size is `10 MB`.
+- Document data is held only in current chat page state.
+- Document context is cleared when **Clear chat** or **Sign out** is used.
 
 ## 5) Current state
 This repo is configured for normal operation:

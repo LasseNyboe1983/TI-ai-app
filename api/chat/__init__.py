@@ -8,6 +8,7 @@ from openai import AzureOpenAI, OpenAI
 
 
 REQUIRED_ENV_VARS = ["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_KEY"]
+MAX_DOCUMENT_CONTEXT_CHARS = 12000
 
 MODEL_REGISTRY = {
     "gpt-35-turbo": {
@@ -165,8 +166,27 @@ def _validate_env() -> str | None:
     return None
 
 
-def _build_messages(history: list[dict[str, str]], prompt: str) -> list[dict[str, str]]:
+def _build_messages(
+    history: list[dict[str, str]],
+    prompt: str,
+    document_context: str = "",
+) -> list[dict[str, str]]:
     messages = [item for item in history if item.get("role") in {"user", "assistant", "system"}]
+
+    safe_document_context = (document_context or "").strip()[:MAX_DOCUMENT_CONTEXT_CHARS]
+    if safe_document_context:
+        messages.insert(
+            0,
+            {
+                "role": "system",
+                "content": (
+                    "Use the provided document context when answering. "
+                    "If the answer is not in the context, say so clearly.\n\n"
+                    f"Document context:\n{safe_document_context}"
+                ),
+            },
+        )
+
     messages.append({"role": "user", "content": prompt})
     return messages
 
@@ -332,6 +352,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     prompt = (body.get("prompt") or "").strip()
     model = (body.get("model") or "gpt-35-turbo").strip()
     history = body.get("conversationHistory") or []
+    document_context = body.get("documentContext") or ""
 
     if not prompt:
         return _json_response({"error": "Prompt is required."}, 400)
@@ -340,7 +361,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response({"error": "Unsupported model."}, 400)
 
     try:
-        messages = _build_messages(history, prompt)
+        messages = _build_messages(history, prompt, document_context)
         model_result = _chat_with_openai(model, messages)
     except Exception as ex:
         return _json_response({"error": f"OpenAI call failed: {str(ex)}"}, 500)
