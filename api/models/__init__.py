@@ -7,7 +7,7 @@ MODELS = [
     {"id": "gpt-35-turbo", "label": "gpt-35-turbo", "type": "chat"},
     {"id": "gpt-5-chat", "label": "gpt-5-chat", "type": "chat"},
     {"id": "model-router", "label": "model-router", "type": "chat"},
-    {"id": "read-doc", "label": "Read Doc", "type": "read-doc"},
+    {"id": "read-doc", "label": "Image-To-Text", "type": "image-to-text"},
     {"id": "FLUX.1-Kontext-pro", "label": "FLUX.1-Kontext-pro", "type": "picture"},
 ]
 

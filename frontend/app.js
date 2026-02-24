@@ -11,12 +11,14 @@ const modelNameEl = document.getElementById('modelName');
 const attachDocBtn = document.getElementById('attachDocBtn');
 const readDocBtn = document.getElementById('readDocBtn');
 const docFileInput = document.getElementById('docFileInput');
+const imageToTextFileInput = document.getElementById('imageToTextFileInput');
 const docStatusEl = document.getElementById('docStatus');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 const signOutBtn = document.getElementById('signOutBtn');
 
 let conversationHistory = [];
 let attachedDocument = null;
+let imageToTextFile = null;
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const MAX_CONTEXT_CHUNKS = 4;
@@ -62,20 +64,23 @@ function addImageMessage(role, imageUrl) {
 function formatModelType(type) {
   const rawType = String(type || '').trim().toLowerCase();
   if (!rawType) return 'Model';
-  if (rawType === 'read-doc' || rawType === 'read doc' || rawType === 'readdoc') return 'Read Doc';
+  if (rawType === 'image-to-text' || rawType === 'image to text' || rawType === 'imagetotext') return 'Image-To-Text';
+  if (rawType === 'read-doc' || rawType === 'read doc' || rawType === 'readdoc') return 'Image-To-Text';
   if (rawType === 'image') return 'Picture';
   return rawType.charAt(0).toUpperCase() + rawType.slice(1);
 }
 
-function isReadDocSelected() {
+function isImageToTextSelected() {
   const selected = modelEl?.selectedOptions?.[0];
   if (!selected) return false;
-  return (selected.value || '') === 'read-doc' || (selected.dataset?.modelTypeRaw || '') === 'read-doc';
+  const modelId = String(selected.value || '').trim().toLowerCase();
+  const modelType = String(selected.dataset?.modelTypeRaw || '').trim().toLowerCase();
+  return modelId === 'read-doc' || modelId === 'image-to-text' || modelType === 'image-to-text';
 }
 
-function updateReadDocButtonVisibility() {
+function updateImageToTextButtonVisibility() {
   if (!readDocBtn) return;
-  readDocBtn.hidden = !isReadDocSelected();
+  readDocBtn.hidden = !isImageToTextSelected();
 }
 
 function setDocumentStatus(text, isError = false) {
@@ -87,7 +92,11 @@ function setDocumentStatus(text, isError = false) {
 function clearAttachedDocument() {
   attachedDocument = null;
   setDocumentStatus('');
-  updateReadDocButtonVisibility();
+  updateImageToTextButtonVisibility();
+}
+
+function clearImageToTextFile() {
+  imageToTextFile = null;
 }
 
 function buildWordSet(value) {
@@ -278,7 +287,7 @@ function renderSelectedModel() {
 
   modelDescriptionEl.textContent = selected.dataset.typeLabel || 'Model';
   modelNameEl.textContent = selected.dataset.modelName || selected.value;
-  updateReadDocButtonVisibility();
+  updateImageToTextButtonVisibility();
 }
 
 function closeModelMenu() {
@@ -476,12 +485,14 @@ if (clearHistoryBtn) {
     conversationHistory = [];
     chatEl.innerHTML = '';
     clearAttachedDocument();
+    clearImageToTextFile();
   });
 }
 
 if (signOutBtn) {
   signOutBtn.addEventListener('click', () => {
     clearAttachedDocument();
+    clearImageToTextFile();
     window.location.assign('/.auth/logout?post_logout_redirect_uri=%2Fsigned-out-full.html');
   });
 }
@@ -498,9 +509,21 @@ if (attachDocBtn && docFileInput) {
   });
 }
 
-if (readDocBtn) {
-  readDocBtn.addEventListener('click', async () => {
-    await indexAttachedDocumentForReadDoc();
+if (readDocBtn && imageToTextFileInput) {
+  readDocBtn.addEventListener('click', () => {
+    imageToTextFileInput.click();
+  });
+
+  imageToTextFileInput.addEventListener('change', () => {
+    const file = imageToTextFileInput.files?.[0] || null;
+    imageToTextFile = file;
+    if (file) {
+      const sizeKb = Math.round(file.size / 1024);
+      setDocumentStatus(`Selected for Image-To-Text: ${file.name} (${sizeKb} KB)`);
+    } else {
+      setDocumentStatus('');
+    }
+    imageToTextFileInput.value = '';
   });
 }
 

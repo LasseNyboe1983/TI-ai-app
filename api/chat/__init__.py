@@ -43,7 +43,7 @@ MODEL_REGISTRY = {
         "api_version_env": "FLUX_API_VERSION",
     },
     "read-doc": {
-        "kind": "read_doc",
+        "kind": "image_to_text",
         "endpoint_env": "AZURE_OPENAI_ENDPOINT",
         "key_env": "AZURE_OPENAI_KEY",
         "api_version": "2025-03-01-preview",
@@ -318,7 +318,7 @@ def _chat_with_openai(model: str, messages: list[dict[str, str]]) -> dict[str, s
     client, config = _resolve_model_client(model)
     kind = config["kind"]
 
-    if kind == "read_doc":
+    if kind == "image_to_text":
         delegate = (os.getenv("READ_DOC_CHAT_MODEL") or "gpt-35-turbo").strip() or "gpt-35-turbo"
         if delegate == model:
             return {"type": "text", "text": "Server misconfiguration: READ_DOC_CHAT_MODEL cannot be 'read-doc'."}
