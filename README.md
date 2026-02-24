@@ -26,6 +26,17 @@ Optional for **Read Doc**:
 - `READ_DOC_EMBEDDINGS_API_VERSION` (default: `2024-02-01`; if you supply a full embeddings URL with `?api-version=...`, it will be used automatically)
 - `EMBEDDINGS_API_VERSION` (default: `2024-02-01`)
 
+Required for **Image-To-Text** (OCR + chat):
+
+- `IMAGE_TO_TEXT_OCR_ENDPOINT` (Azure AI Vision endpoint, e.g. `https://<resource>.cognitiveservices.azure.com/`)
+- `IMAGE_TO_TEXT_OCR_KEY`
+
+Optional for **Image-To-Text**:
+
+- `IMAGE_TO_TEXT_OCR_API_VERSION` (default: `2023-02-01-preview`)
+- `IMAGE_TO_TEXT_CHAT_MODEL` (default: `gpt-35-turbo`)
+- `IMAGE_TO_TEXT_CHAT_API_VERSION` (default: `2025-03-01-preview`)
+
 Optional (if `model-router` uses a separate endpoint/key/version):
 
 - `MODEL_ROUTER_ENDPOINT`

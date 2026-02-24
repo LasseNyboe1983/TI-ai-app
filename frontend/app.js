@@ -419,6 +419,39 @@ form.addEventListener('submit', async (event) => {
   sendBtn.disabled = true;
 
   try {
+    if (isImageToTextSelected()) {
+      if (!imageToTextFile) {
+        addMessage('system', 'Select a file using Image-To-Text before sending.');
+        return;
+      }
+
+      const fileContentBase64 = await fileToBase64(imageToTextFile);
+      const response = await fetch('/api/image-to-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          prompt,
+          fileName: imageToTextFile.name,
+          fileContentBase64,
+          conversationHistory,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        addMessage('system', data.error || 'Image-To-Text request failed.');
+        return;
+      }
+
+      addMessage('assistant', data.reply || '(No response)');
+      conversationHistory = Array.isArray(data.conversationHistory)
+        ? data.conversationHistory
+        : [...conversationHistory, { role: 'user', content: prompt }, { role: 'assistant', content: data.reply || '(No response)' }];
+
+      return;
+    }
+
     let documentContext = buildDocumentContext(prompt);
 
     if (isReadDocSelected() && attachedDocument?.readDocIndex?.chunks?.length && attachedDocument?.readDocIndex?.embeddings?.length) {
