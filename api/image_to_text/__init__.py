@@ -196,6 +196,11 @@ def _build_messages(history: list[dict[str, str]], prompt: str, ocr_text: str) -
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
+    return _json_response(
+        {"error": "Service temporarily unavailable: maintenance mode is active."},
+        503,
+    )
+
     openai_endpoint = _env("AZURE_OPENAI_ENDPOINT")
     openai_key = _env("AZURE_OPENAI_KEY")
 
