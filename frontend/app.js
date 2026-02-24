@@ -70,17 +70,44 @@ function formatModelType(type) {
   return rawType.charAt(0).toUpperCase() + rawType.slice(1);
 }
 
-function isImageToTextSelected() {
+function getSelectedModelInfo() {
   const selected = modelEl?.selectedOptions?.[0];
-  if (!selected) return false;
-  const modelId = String(selected.value || '').trim().toLowerCase();
-  const modelType = String(selected.dataset?.modelTypeRaw || '').trim().toLowerCase();
+  if (!selected) {
+    return {
+      modelId: '',
+      modelType: '',
+    };
+  }
+
+  return {
+    modelId: String(selected.value || '').trim().toLowerCase(),
+    modelType: String(selected.dataset?.modelTypeRaw || '').trim().toLowerCase(),
+  };
+}
+
+function isImageToTextSelected() {
+  const { modelId, modelType } = getSelectedModelInfo();
   return modelId === 'read-doc' || modelId === 'image-to-text' || modelType === 'image-to-text';
 }
 
-function updateImageToTextButtonVisibility() {
-  if (!readDocBtn) return;
-  readDocBtn.hidden = !isImageToTextSelected();
+function updateActionButtonsVisibility() {
+  const { modelType } = getSelectedModelInfo();
+
+  const isPicture = modelType === 'picture' || modelType === 'image';
+  const isImageToText = isImageToTextSelected();
+  const isChat = modelType === 'chat' || (!modelType && !isPicture && !isImageToText);
+
+  if (attachDocBtn) {
+    attachDocBtn.hidden = !isChat;
+  }
+  if (readDocBtn) {
+    readDocBtn.hidden = !isImageToText;
+  }
+
+  if (isPicture) {
+    if (attachDocBtn) attachDocBtn.hidden = true;
+    if (readDocBtn) readDocBtn.hidden = true;
+  }
 }
 
 function setDocumentStatus(text, isError = false) {
@@ -92,7 +119,7 @@ function setDocumentStatus(text, isError = false) {
 function clearAttachedDocument() {
   attachedDocument = null;
   setDocumentStatus('');
-  updateImageToTextButtonVisibility();
+  updateActionButtonsVisibility();
 }
 
 function clearImageToTextFile() {
@@ -287,7 +314,7 @@ function renderSelectedModel() {
 
   modelDescriptionEl.textContent = selected.dataset.typeLabel || 'Model';
   modelNameEl.textContent = selected.dataset.modelName || selected.value;
-  updateImageToTextButtonVisibility();
+  updateActionButtonsVisibility();
 }
 
 function closeModelMenu() {
