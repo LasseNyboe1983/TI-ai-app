@@ -14,6 +14,15 @@ Set these in Azure Static Web App Configuration:
 - `ALLOWED_TENANT_ID` (example: your Entra tenant GUID)
 - `ALLOWED_USERS` (comma-separated UPN list, example: `user014@undervis.nu`)
 
+Required for **Read Doc** model (embeddings indexing):
+
+- `READ_DOC_EMBEDDING_DEPLOYMENT` (your Azure OpenAI embedding deployment name, e.g. `text-embedding-3-large-...`)
+
+Optional for **Read Doc**:
+
+- `READ_DOC_CHAT_MODEL` (chat model to answer with after selecting doc chunks; default: `gpt-35-turbo`)
+- `EMBEDDINGS_API_VERSION` (default: `2024-02-01`)
+
 Optional (if `model-router` uses a separate endpoint/key/version):
 
 - `MODEL_ROUTER_ENDPOINT`

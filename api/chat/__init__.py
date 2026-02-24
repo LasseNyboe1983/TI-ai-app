@@ -42,6 +42,12 @@ MODEL_REGISTRY = {
         "api_version": "2025-04-01-preview",
         "api_version_env": "FLUX_API_VERSION",
     },
+    "read-doc": {
+        "kind": "read_doc",
+        "endpoint_env": "AZURE_OPENAI_ENDPOINT",
+        "key_env": "AZURE_OPENAI_KEY",
+        "api_version": "2025-03-01-preview",
+    },
 }
 
 
@@ -311,6 +317,14 @@ def _extract_image_from_images_api_response(response: Any) -> str | None:
 def _chat_with_openai(model: str, messages: list[dict[str, str]]) -> dict[str, str]:
     client, config = _resolve_model_client(model)
     kind = config["kind"]
+
+    if kind == "read_doc":
+        delegate = (os.getenv("READ_DOC_CHAT_MODEL") or "gpt-35-turbo").strip() or "gpt-35-turbo"
+        if delegate == model:
+            return {"type": "text", "text": "Server misconfiguration: READ_DOC_CHAT_MODEL cannot be 'read-doc'."}
+        if delegate not in MODEL_REGISTRY:
+            return {"type": "text", "text": f"Server misconfiguration: READ_DOC_CHAT_MODEL '{delegate}' is not supported."}
+        return _chat_with_openai(delegate, messages)
 
     if kind == "chat_completions":
         response = client.chat.completions.create(model=model, messages=messages)

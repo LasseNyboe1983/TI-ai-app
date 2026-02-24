@@ -9,6 +9,7 @@ const modelMenuEl = document.getElementById('modelMenu');
 const modelDescriptionEl = document.getElementById('modelDescription');
 const modelNameEl = document.getElementById('modelName');
 const attachDocBtn = document.getElementById('attachDocBtn');
+const readDocBtn = document.getElementById('readDocBtn');
 const docFileInput = document.getElementById('docFileInput');
 const docStatusEl = document.getElementById('docStatus');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
@@ -61,8 +62,20 @@ function addImageMessage(role, imageUrl) {
 function formatModelType(type) {
   const rawType = String(type || '').trim().toLowerCase();
   if (!rawType) return 'Model';
+  if (rawType === 'read-doc' || rawType === 'read doc' || rawType === 'readdoc') return 'Read Doc';
   if (rawType === 'image') return 'Picture';
   return rawType.charAt(0).toUpperCase() + rawType.slice(1);
+}
+
+function isReadDocSelected() {
+  const selected = modelEl?.selectedOptions?.[0];
+  if (!selected) return false;
+  return (selected.value || '') === 'read-doc' || (selected.dataset?.modelTypeRaw || '') === 'read-doc';
+}
+
+function updateReadDocButtonVisibility() {
+  if (!readDocBtn) return;
+  readDocBtn.hidden = !isReadDocSelected();
 }
 
 function setDocumentStatus(text, isError = false) {
@@ -74,6 +87,7 @@ function setDocumentStatus(text, isError = false) {
 function clearAttachedDocument() {
   attachedDocument = null;
   setDocumentStatus('');
+  updateReadDocButtonVisibility();
 }
 
 function buildWordSet(value) {
@@ -108,6 +122,37 @@ function pickRelevantChunks(prompt, chunks) {
     .map((item) => item.chunk);
 }
 
+function dot(a, b) {
+  let sum = 0;
+  const len = Math.min(a.length, b.length);
+  for (let i = 0; i < len; i += 1) sum += a[i] * b[i];
+  return sum;
+}
+
+function norm(a) {
+  return Math.sqrt(dot(a, a));
+}
+
+function pickRelevantChunksByEmbedding(promptEmbedding, chunks, chunkEmbeddings) {
+  if (!Array.isArray(promptEmbedding) || !promptEmbedding.length) return chunks.slice(0, MAX_CONTEXT_CHUNKS);
+  const pNorm = norm(promptEmbedding) || 1;
+
+  const scored = [];
+  for (let i = 0; i < chunks.length; i += 1) {
+    const emb = chunkEmbeddings?.[i];
+    if (!Array.isArray(emb) || !emb.length) continue;
+    const score = dot(promptEmbedding, emb) / (pNorm * (norm(emb) || 1));
+    scored.push({ chunk: chunks[i], index: i, score });
+  }
+
+  if (!scored.length) return chunks.slice(0, MAX_CONTEXT_CHUNKS);
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, MAX_CONTEXT_CHUNKS)
+    .map((item) => item.chunk);
+}
+
 function buildDocumentContext(prompt) {
   if (!attachedDocument || !Array.isArray(attachedDocument.chunks) || !attachedDocument.chunks.length) {
     return '';
@@ -118,6 +163,50 @@ function buildDocumentContext(prompt) {
   const chunksToUse = selectedChunks.length ? selectedChunks : fallbackChunks;
 
   return `Document: ${attachedDocument.fileName}\n\n${chunksToUse.join('\n\n---\n\n')}`;
+}
+
+async function createEmbeddings(inputs) {
+  const response = await fetch('/api/embeddings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ inputs }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || 'Embeddings request failed.');
+  }
+
+  const embeddings = Array.isArray(data.embeddings) ? data.embeddings : [];
+  if (!embeddings.length) {
+    throw new Error('Embeddings API returned no vectors.');
+  }
+  return embeddings;
+}
+
+async function indexAttachedDocumentForReadDoc() {
+  if (!attachedDocument || !Array.isArray(attachedDocument.chunks) || !attachedDocument.chunks.length) {
+    setDocumentStatus('Attach a document first.', true);
+    return;
+  }
+
+  const MAX_INDEX_CHUNKS = 64;
+  const chunks = attachedDocument.chunks.slice(0, MAX_INDEX_CHUNKS);
+  const suffix = attachedDocument.chunks.length > MAX_INDEX_CHUNKS ? ` (first ${MAX_INDEX_CHUNKS} chunks)` : '';
+
+  setDocumentStatus(`Indexing document for Read Doc${suffix}...`);
+
+  try {
+    const embeddings = await createEmbeddings(chunks);
+    attachedDocument.readDocIndex = {
+      chunks,
+      embeddings,
+    };
+    setDocumentStatus(`Read Doc index ready (${chunks.length} chunks)`);
+  } catch (err) {
+    setDocumentStatus(err?.message || 'Failed to index document for Read Doc.', true);
+  }
 }
 
 function fileToBase64(file) {
@@ -189,6 +278,7 @@ function renderSelectedModel() {
 
   modelDescriptionEl.textContent = selected.dataset.typeLabel || 'Model';
   modelNameEl.textContent = selected.dataset.modelName || selected.value;
+  updateReadDocButtonVisibility();
 }
 
 function closeModelMenu() {
@@ -254,6 +344,7 @@ async function loadModels() {
       option.value = model.id;
       const typeLabel = formatModelType(model.type);
       option.dataset.typeLabel = typeLabel;
+      option.dataset.modelTypeRaw = String(model.type || '');
       option.dataset.modelName = model.label || model.id;
       option.textContent = `${typeLabel} - ${model.label || model.id}`;
       modelEl.appendChild(option);
@@ -263,6 +354,7 @@ async function loadModels() {
       const fallback = document.createElement('option');
       fallback.value = 'gpt-35-turbo';
       fallback.dataset.typeLabel = 'Chat';
+      fallback.dataset.modelTypeRaw = 'chat';
       fallback.dataset.modelName = 'gpt-35-turbo';
       fallback.textContent = 'Chat - gpt-35-turbo';
       modelEl.appendChild(fallback);
@@ -275,6 +367,7 @@ async function loadModels() {
     const fallback = document.createElement('option');
     fallback.value = 'gpt-35-turbo';
     fallback.dataset.typeLabel = 'Chat';
+    fallback.dataset.modelTypeRaw = 'chat';
     fallback.dataset.modelName = 'gpt-35-turbo';
     fallback.textContent = 'Chat - gpt-35-turbo';
     modelEl.appendChild(fallback);
@@ -317,6 +410,24 @@ form.addEventListener('submit', async (event) => {
   sendBtn.disabled = true;
 
   try {
+    let documentContext = buildDocumentContext(prompt);
+
+    if (isReadDocSelected() && attachedDocument?.readDocIndex?.chunks?.length && attachedDocument?.readDocIndex?.embeddings?.length) {
+      try {
+        const [promptEmbedding] = await createEmbeddings([prompt]);
+        const selectedChunks = pickRelevantChunksByEmbedding(
+          promptEmbedding,
+          attachedDocument.readDocIndex.chunks,
+          attachedDocument.readDocIndex.embeddings,
+        );
+        if (selectedChunks?.length) {
+          documentContext = `Document: ${attachedDocument.fileName}\n\n${selectedChunks.join('\n\n---\n\n')}`;
+        }
+      } catch {
+        // Fallback to keyword-based chunk selection.
+      }
+    }
+
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -325,7 +436,7 @@ form.addEventListener('submit', async (event) => {
         prompt,
         model: modelEl.value,
         conversationHistory,
-        documentContext: buildDocumentContext(prompt),
+        documentContext,
       }),
     });
 
@@ -384,6 +495,12 @@ if (attachDocBtn && docFileInput) {
     const file = docFileInput.files?.[0];
     await uploadDocument(file);
     docFileInput.value = '';
+  });
+}
+
+if (readDocBtn) {
+  readDocBtn.addEventListener('click', async () => {
+    await indexAttachedDocumentForReadDoc();
   });
 }
 
