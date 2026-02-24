@@ -6,11 +6,12 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import azure.functions as func
-from openai import AzureOpenAI
+from openai import AzureOpenAI, OpenAI
 
 
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
 MAX_OCR_CHARS = 12000
+MAX_VISION_OCR_CHARS = 24000
 
 
 def _json_response(payload: dict[str, Any], status_code: int = 200) -> func.HttpResponse:
@@ -32,6 +33,28 @@ def _decode_payload(raw_b64: str) -> bytes:
     return base64.b64decode(payload, validate=True)
 
 
+def _guess_image_mime(file_name: str) -> str:
+    lower = (file_name or "").strip().lower()
+    if lower.endswith(".jpg") or lower.endswith(".jpeg"):
+        return "image/jpeg"
+    if lower.endswith(".webp"):
+        return "image/webp"
+    if lower.endswith(".gif"):
+        return "image/gif"
+    return "image/png"
+
+
+def _normalize_openai_v1_base_url(value: str) -> str:
+    raw = (value or "").strip().rstrip("/")
+    if not raw:
+        return ""
+    if raw.endswith("/openai/v1"):
+        return raw + "/"
+    if raw.endswith("/openai/v1/"):
+        return raw
+    return raw + "/openai/v1/"
+
+
 def _extract_read_text(read_result: dict[str, Any]) -> str:
     content = read_result.get("content")
     if isinstance(content, str) and content.strip():
@@ -51,14 +74,12 @@ def _extract_read_text(read_result: dict[str, Any]) -> str:
     return "\n".join(lines).strip()
 
 
-def _ocr_image(image_bytes: bytes) -> str:
+def _ocr_with_azure_ai_vision(image_bytes: bytes) -> str:
     endpoint = _env("IMAGE_TO_TEXT_OCR_ENDPOINT")
     key = _env("IMAGE_TO_TEXT_OCR_KEY")
 
     if not endpoint or not key:
-        raise RuntimeError(
-            "Missing OCR settings: IMAGE_TO_TEXT_OCR_ENDPOINT and IMAGE_TO_TEXT_OCR_KEY must be set."
-        )
+        raise RuntimeError("Missing OCR settings.")
 
     api_version = _env("IMAGE_TO_TEXT_OCR_API_VERSION") or "2023-02-01-preview"
 
@@ -66,9 +87,8 @@ def _ocr_image(image_bytes: bytes) -> str:
     if "/openai/" in lowered_endpoint or lowered_endpoint.endswith(".openai.azure.com"):
         raise RuntimeError(
             "IMAGE_TO_TEXT_OCR_ENDPOINT appears to be an Azure OpenAI endpoint. "
-            "Image-To-Text OCR requires an Azure AI Vision (Computer Vision) endpoint like "
-            "https://<vision-resource>.cognitiveservices.azure.com/ . "
-            "The Azure OpenAI embeddings URL belongs in READ_DOC_EMBEDDING_ENDPOINT instead."
+            "If you want OCR via Azure OpenAI vision, set IMAGE_TO_TEXT_VISION_DEPLOYMENT (and optionally IMAGE_TO_TEXT_VISION_BASE_URL/KEY) "
+            "and remove IMAGE_TO_TEXT_OCR_ENDPOINT/KEY."
         )
 
     base = endpoint.rstrip("/")
@@ -92,8 +112,66 @@ def _ocr_image(image_bytes: bytes) -> str:
     if not isinstance(read_result, dict):
         raise RuntimeError("OCR service did not return readResult.")
 
-    text = _extract_read_text(read_result)
-    return text
+    return _extract_read_text(read_result)
+
+
+def _ocr_with_azure_openai_vision(image_bytes: bytes, file_name: str) -> str:
+    deployment = _env("IMAGE_TO_TEXT_VISION_DEPLOYMENT")
+    if not deployment:
+        raise RuntimeError("Missing OCR settings.")
+
+    base_url = (
+        _env("IMAGE_TO_TEXT_VISION_BASE_URL")
+        or _env("AZURE_OPENAI_V1_BASE_URL")
+        or _env("AZURE_OPENAI_ENDPOINT")
+    )
+    key = _env("IMAGE_TO_TEXT_VISION_KEY") or _env("AZURE_OPENAI_KEY")
+
+    if not base_url or not key:
+        raise RuntimeError(
+            "Missing OCR settings: IMAGE_TO_TEXT_VISION_BASE_URL (or AZURE_OPENAI_V1_BASE_URL/AZURE_OPENAI_ENDPOINT) and IMAGE_TO_TEXT_VISION_KEY (or AZURE_OPENAI_KEY)."
+        )
+
+    normalized_base_url = _normalize_openai_v1_base_url(base_url)
+    client = OpenAI(base_url=normalized_base_url, api_key=key)
+
+    mime = _guess_image_mime(file_name)
+    data_url = f"data:{mime};base64,{base64.b64encode(image_bytes).decode('ascii')}"
+
+    instruction = (
+        "Extract all text from the image exactly as written. "
+        "Preserve line breaks when possible. "
+        "If there is no text, return an empty string."
+    )
+
+    completion = client.chat.completions.create(
+        model=deployment,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": instruction},
+                    {"type": "image_url", "image_url": {"url": data_url}},
+                ],
+            }
+        ],
+        temperature=0,
+    )
+
+    text = (completion.choices[0].message.content or "").strip()
+    return text[:MAX_VISION_OCR_CHARS]
+
+
+def _ocr_image(image_bytes: bytes, file_name: str) -> str:
+    """Try OCR via Azure AI Vision first (if configured), otherwise via Azure OpenAI vision (if configured)."""
+
+    endpoint = _env("IMAGE_TO_TEXT_OCR_ENDPOINT")
+    key = _env("IMAGE_TO_TEXT_OCR_KEY")
+    if endpoint and key:
+        return _ocr_with_azure_ai_vision(image_bytes)
+
+    # No Vision resource configured; try Azure OpenAI vision OCR.
+    return _ocr_with_azure_openai_vision(image_bytes, file_name)
 
 
 def _build_messages(history: list[dict[str, str]], prompt: str, ocr_text: str) -> list[dict[str, str]]:
@@ -156,7 +234,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response({"error": f"File too large. Max size is {max_mb} MB."}, 413)
 
     try:
-        ocr_text = _ocr_image(image_bytes)
+        ocr_text = _ocr_image(image_bytes, file_name)
     except Exception as ex:
         return _json_response({"error": f"OCR failed: {str(ex)}"}, 500)
 

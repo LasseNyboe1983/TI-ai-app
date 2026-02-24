@@ -28,12 +28,22 @@ Optional for **Read Doc**:
 
 Required for **Image-To-Text** (OCR + chat):
 
-- `IMAGE_TO_TEXT_OCR_ENDPOINT` (Azure AI Vision endpoint, e.g. `https://<resource>.cognitiveservices.azure.com/`)
+Choose ONE OCR provider:
+
+Option A) Azure AI Vision (Computer Vision) OCR:
+
+- `IMAGE_TO_TEXT_OCR_ENDPOINT` (Azure AI Vision endpoint, e.g. `https://<vision-resource>.cognitiveservices.azure.com/`)
 - `IMAGE_TO_TEXT_OCR_KEY`
+
+Option B) Azure OpenAI vision OCR (no separate Vision resource):
+
+- `IMAGE_TO_TEXT_VISION_DEPLOYMENT` (a vision-capable deployment, e.g. a GPT-4.1 / GPT-4o deployment)
+- `IMAGE_TO_TEXT_VISION_BASE_URL` (e.g. `https://<resource>.openai.azure.com/openai/v1/`)
+- `IMAGE_TO_TEXT_VISION_KEY` (defaults to `AZURE_OPENAI_KEY` if omitted)
 
 Optional for **Image-To-Text**:
 
-- `IMAGE_TO_TEXT_OCR_API_VERSION` (default: `2023-02-01-preview`)
+- `IMAGE_TO_TEXT_OCR_API_VERSION` (default: `2023-02-01-preview`, only for Option A)
 - `IMAGE_TO_TEXT_CHAT_MODEL` (default: `gpt-35-turbo`)
 - `IMAGE_TO_TEXT_CHAT_API_VERSION` (default: `2025-03-01-preview`)
 
