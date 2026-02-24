@@ -13,12 +13,6 @@ MODELS = [
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     return func.HttpResponse(
-        json.dumps({"error": "Service temporarily unavailable: maintenance mode is active."}),
-        status_code=503,
-        mimetype="application/json",
-    )
-
-    return func.HttpResponse(
         json.dumps({"models": MODELS}),
         status_code=200,
         mimetype="application/json",

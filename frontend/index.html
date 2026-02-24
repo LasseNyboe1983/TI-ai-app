@@ -3,12 +3,63 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Maintenance</title>
+    <title>TI AI Chat Hub</title>
+    <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main>
-      <h1>Maintenance mode</h1>
-      <p>This site is temporarily unavailable.</p>
+    <main class="container">
+      <div class="top-actions">
+        <button id="signOutBtn" type="button">Sign out</button>
+      </div>
+
+      <header class="header">
+        <h1>TI AI Chat Hub</h1>
+        <div id="userInfo" aria-live="polite"></div>
+
+        <div class="controls">
+          <div class="model-selector">
+            <select id="model" aria-label="Model" hidden></select>
+            <button
+              id="modelToggleBtn"
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+            >
+              <span id="modelDescription">Model</span>
+              <span id="modelName"></span>
+              <span aria-hidden="true">▾</span>
+            </button>
+            <div id="modelMenu" role="listbox" hidden></div>
+          </div>
+
+          <button id="clearHistoryBtn" type="button">Clear chat</button>
+        </div>
+      </header>
+
+      <section id="chat" aria-label="Chat transcript" aria-live="polite"></section>
+
+      <div class="chat-actions">
+        <input
+          id="docFileInput"
+          type="file"
+          accept=".pdf,.docx,.txt,.md"
+          hidden
+        />
+        <button id="attachDocBtn" type="button">Attach document</button>
+        <div id="docStatus" role="status" aria-live="polite"></div>
+      </div>
+
+      <form id="promptForm">
+        <textarea
+          id="prompt"
+          placeholder="Type your message…"
+          autocomplete="off"
+          required
+        ></textarea>
+        <button id="sendBtn" type="submit">Send</button>
+      </form>
     </main>
+
+    <script src="/app.js" defer></script>
   </body>
 </html>

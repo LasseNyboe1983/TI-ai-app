@@ -1,8 +1,32 @@
 {
   "routes": [
     {
+      "route": "/.auth/*",
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/styles.css",
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/app.js",
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/signed-out.html",
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/signed-out-full.html",
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/api/*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
       "route": "/*",
-      "allowedRoles": ["maintenance-lock"]
+      "allowedRoles": ["authenticated"]
     }
   ],
   "responseOverrides": {
