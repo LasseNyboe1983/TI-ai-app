@@ -1,6 +1,7 @@
 import json
 import os
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 import azure.functions as func
 from openai import AzureOpenAI
@@ -23,20 +24,80 @@ def _get_required_env(name: str) -> str | None:
     return value or None
 
 
+def _normalize_azure_openai_endpoint(value: str) -> str:
+    raw = (value or "").strip().rstrip("/")
+    if not raw:
+        return ""
+
+    parsed = urlparse(raw)
+    path = (parsed.path or "").rstrip("/")
+
+    if "/openai" in path:
+        before_openai = path.split("/openai", 1)[0]
+        raw = f"{parsed.scheme}://{parsed.netloc}{before_openai}"
+
+    return raw.rstrip("/")
+
+
+def _extract_deployment_from_url(value: str) -> str | None:
+    raw = (value or "").strip()
+    if not raw:
+        return None
+
+    parsed = urlparse(raw)
+    path = parsed.path or ""
+    marker = "/openai/deployments/"
+    if marker not in path:
+        return None
+
+    tail = path.split(marker, 1)[1]
+    deployment = tail.split("/", 1)[0].strip()
+    return deployment or None
+
+
+def _extract_api_version_from_url(value: str) -> str | None:
+    raw = (value or "").strip()
+    if not raw:
+        return None
+
+    parsed = urlparse(raw)
+    query = parse_qs(parsed.query or "")
+    versions = query.get("api-version") or query.get("api_version")
+    if not versions:
+        return None
+    version = str(versions[0] or "").strip()
+    return version or None
+
+
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    endpoint = _get_required_env("AZURE_OPENAI_ENDPOINT")
-    api_key = _get_required_env("AZURE_OPENAI_KEY")
+    raw_endpoint = (
+        _get_required_env("READ_DOC_EMBEDDING_ENDPOINT")
+        or _get_required_env("AZURE_OPENAI_ENDPOINT")
+    )
+    api_key = (
+        _get_required_env("READ_DOC_EMBEDDING_KEY")
+        or _get_required_env("AZURE_OPENAI_KEY")
+    )
+
+    if not raw_endpoint or not api_key:
+        return _json_response(
+            {
+                "error": (
+                    "Missing required environment variables: "
+                    "READ_DOC_EMBEDDING_ENDPOINT (or AZURE_OPENAI_ENDPOINT), "
+                    "READ_DOC_EMBEDDING_KEY (or AZURE_OPENAI_KEY)"
+                )
+            },
+            500,
+        )
+
+    endpoint = _normalize_azure_openai_endpoint(raw_endpoint)
 
     deployment = (
         _get_required_env("READ_DOC_EMBEDDING_DEPLOYMENT")
         or _get_required_env("EMBEDDINGS_DEPLOYMENT")
+        or _extract_deployment_from_url(raw_endpoint)
     )
-
-    if not endpoint or not api_key:
-        return _json_response(
-            {"error": "Missing required environment variables: AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_KEY"},
-            500,
-        )
 
     if not deployment:
         return _json_response(
@@ -71,7 +132,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             continue
         cleaned.append(text[:MAX_TEXT_CHARS])
 
-    api_version = (os.getenv("EMBEDDINGS_API_VERSION") or "2024-02-01").strip()
+    api_version = (
+        (os.getenv("READ_DOC_EMBEDDINGS_API_VERSION") or "").strip()
+        or (os.getenv("EMBEDDINGS_API_VERSION") or "").strip()
+        or _extract_api_version_from_url(raw_endpoint)
+        or "2024-02-01"
+    )
 
     client = AzureOpenAI(
         api_key=api_key,
