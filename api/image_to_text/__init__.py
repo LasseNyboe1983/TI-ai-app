@@ -62,6 +62,15 @@ def _ocr_image(image_bytes: bytes) -> str:
 
     api_version = _env("IMAGE_TO_TEXT_OCR_API_VERSION") or "2023-02-01-preview"
 
+    lowered_endpoint = endpoint.lower()
+    if "/openai/" in lowered_endpoint or lowered_endpoint.endswith(".openai.azure.com"):
+        raise RuntimeError(
+            "IMAGE_TO_TEXT_OCR_ENDPOINT appears to be an Azure OpenAI endpoint. "
+            "Image-To-Text OCR requires an Azure AI Vision (Computer Vision) endpoint like "
+            "https://<vision-resource>.cognitiveservices.azure.com/ . "
+            "The Azure OpenAI embeddings URL belongs in READ_DOC_EMBEDDING_ENDPOINT instead."
+        )
+
     base = endpoint.rstrip("/")
     url = f"{base}/computervision/imageanalysis:analyze?{urlencode({'api-version': api_version, 'features': 'read'})}"
 
