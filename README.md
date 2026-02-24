@@ -6,6 +6,41 @@ Minimal Azure Static Web Apps setup with:
 - SWA authentication gate in `staticwebapp.config.json`
 - In-chat document attach (`PDF`, `DOCX`, `TXT`, `MD`) for context-aware chat
 
+## 0) Current build state (Feb 24, 2026)
+
+**Deployed UX (frontend):**
+- Model picker is populated from `GET /api/models`.
+- The action-button area is dynamic based on selected model type:
+	- **Chat** models: shows **Attach document**
+	- **Image-To-Text** models: shows **Attach image file**
+	- **Picture** models: shows no action buttons
+- When an **Image-To-Text** model is selected, **Send** posts to `POST /api/image-to-text` (not `/api/chat`) and includes the selected file as base64.
+
+**Backend endpoints (Azure Functions):**
+- `POST /api/chat` – normal chat (supports document context)
+- `POST /api/document` – parses PDF/DOCX/TXT/MD into chunks
+- `GET /api/models` – returns model list for the picker
+- `POST /api/embeddings` – embeddings helper (currently not wired to the UI)
+- `POST /api/image-to-text` – OCR + then chat (Image-To-Text flow)
+
+**Models shown in the picker (current):**
+- `gpt-35-turbo` (type `chat`)
+- `gpt-5-chat` (type `chat`)
+- `model-router` (type `chat`)
+- `gpt-4.1` (type `image-to-text`) – internally still uses model id `read-doc` in the API payload
+- `FLUX.1-Kontext-pro` (type `picture`)
+
+**Image-To-Text implementation details:**
+- `POST /api/image-to-text` performs OCR, then injects OCR text into a system message, then calls a chat model to answer.
+- OCR provider is configurable:
+	- Option A: Azure AI Vision (Computer Vision) OCR via `IMAGE_TO_TEXT_OCR_ENDPOINT/KEY`
+	- Option B: Azure OpenAI vision OCR via `IMAGE_TO_TEXT_VISION_DEPLOYMENT` and `IMAGE_TO_TEXT_VISION_BASE_URL` (recommended when using Foundry deployments only)
+
+**Known gaps / TODOs:**
+- The embeddings-based document indexing feature exists (`/api/embeddings`) but is not currently exposed in the UI.
+- The image picker allows selecting *any* file (per requirement), but non-image files may fail when sent to the vision OCR step.
+- For clarity, consider renaming the Image-To-Text model id from `read-doc` to something like `image-to-text` (would require updating frontend/back-end checks).
+
 ## 1) Required environment variables (SWA)
 Set these in Azure Static Web App Configuration:
 
