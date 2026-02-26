@@ -70,11 +70,6 @@ def _extract_api_version_from_url(value: str) -> str | None:
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    return _json_response(
-        {"error": "Service temporarily unavailable: maintenance mode is active."},
-        503,
-    )
-
     raw_endpoint = (
         _get_required_env("READ_DOC_EMBEDDING_ENDPOINT")
         or _get_required_env("AZURE_OPENAI_ENDPOINT")

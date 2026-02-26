@@ -90,6 +90,11 @@ function isImageToTextSelected() {
   return modelId === 'read-doc' || modelId === 'image-to-text' || modelType === 'image-to-text';
 }
 
+function isReadDocSelected() {
+  const { modelId } = getSelectedModelInfo();
+  return modelId === 'read-doc';
+}
+
 function updateActionButtonsVisibility() {
   const { modelType } = getSelectedModelInfo();
 

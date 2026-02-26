@@ -124,6 +124,10 @@ Add this repository secret before first deploy:
 - Document context is cleared when **Clear chat** or **Sign out** is used.
 
 ## 5) Maintenance mode
-Maintenance mode is currently **enabled** in this repo.
+Maintenance mode is currently **disabled** in this repo.
 
-This blocks all routes via `frontend/staticwebapp.config.json`, replaces `frontend/index.html` with a maintenance page, and API functions return `503`.
+The app is using normal authenticated routing in `frontend/staticwebapp.config.json`, the full app UI in `frontend/index.html`, and live API function handlers.
+
+## 7) Collaboration workflow
+- Changes made in this workspace are intended for the GitHub project.
+- Default expectation: after completing requested changes, stage, commit, and push updates to `origin/main`.
