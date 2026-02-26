@@ -92,6 +92,7 @@ h1 {
 .robot-svg {
   width: 100%;
   height: 100%;
+  animation: robot-idle-float 2.2s ease-in-out infinite;
 }
 
 .robot-shadow {
@@ -114,16 +115,33 @@ h1 {
 }
 
 .robot-avatar .robot-head-group {
-  transform-origin: 80px 68px;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.robot-avatar .robot-mouth {
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 .robot-avatar.talking .robot-head-group {
-  animation: robot-head-bob 0.45s ease-in-out infinite;
+  animation: robot-head-bob 0.25s ease-in-out infinite;
 }
 
 .robot-avatar.talking .robot-mouth {
-  transform-origin: 80px 84px;
-  animation: robot-mouth-talk 0.22s ease-in-out infinite;
+  animation: robot-mouth-talk 0.12s ease-in-out infinite;
+}
+
+.robot-avatar.talking .robot-body {
+  animation: robot-body-bounce 0.28s ease-in-out infinite;
+}
+
+.robot-avatar.talking .robot-eye {
+  animation: robot-eye-blink 0.72s linear infinite;
+}
+
+.robot-avatar.talking .robot-antenna-tip {
+  animation: robot-antenna-pulse 0.26s ease-in-out infinite;
 }
 
 #chat {
@@ -375,17 +393,68 @@ button:disabled {
     transform: rotate(0deg) translateY(0);
   }
   50% {
-    transform: rotate(-4deg) translateY(-1px);
+    transform: rotate(-7deg) translateY(-2px);
   }
 }
 
 @keyframes robot-mouth-talk {
   0%,
   100% {
-    transform: scaleY(1);
+    transform: scaleY(1) scaleX(1);
+  }
+  25% {
+    transform: scaleY(2.4) scaleX(0.85);
   }
   50% {
-    transform: scaleY(2.1);
+    transform: scaleY(0.6) scaleX(1.1);
+  }
+  75% {
+    transform: scaleY(1.9) scaleX(0.9);
+  }
+}
+
+@keyframes robot-body-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes robot-eye-blink {
+  0%,
+  42%,
+  46%,
+  88%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  44%,
+  90% {
+    transform: scaleY(0.18);
+  }
+}
+
+@keyframes robot-antenna-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.28);
+  }
+}
+
+@keyframes robot-idle-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
   }
 }
 
