@@ -75,19 +75,18 @@ h1 {
 }
 
 .chat-shell {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
+  position: relative;
+  overflow: visible;
 }
 
 .robot-avatar {
-  position: static;
-  flex: 0 0 110px;
+  position: absolute;
+  left: -116px;
+  bottom: -78px;
   width: 110px;
   height: 138px;
-  margin-bottom: 8px;
   pointer-events: none;
-  z-index: 2;
+  z-index: 3;
 }
 
 .robot-svg {
@@ -128,7 +127,6 @@ h1 {
 }
 
 #chat {
-  flex: 1 1 auto;
   position: relative;
   min-height: clamp(300px, 44vh, 420px);
   max-height: 62vh;
@@ -143,10 +141,10 @@ h1 {
 #chat::after {
   content: '';
   position: absolute;
-  left: -10px;
-  bottom: 28px;
-  width: 16px;
-  height: 16px;
+  left: -11px;
+  bottom: 24px;
+  width: 14px;
+  height: 14px;
   background: rgba(255, 255, 255, 0.9);
   border-left: 1px solid #dbe3ee;
   border-top: 1px solid #dbe3ee;
@@ -154,10 +152,10 @@ h1 {
 }
 
 #chat::before {
-  content: '>';
+  content: 'v';
   position: absolute;
-  left: -17px;
-  bottom: 22px;
+  left: -18px;
+  bottom: 16px;
   color: #94a3b8;
   font-size: 18px;
   font-weight: 700;
@@ -425,8 +423,8 @@ button:disabled {
   .robot-avatar {
     width: 88px;
     height: 112px;
-    flex-basis: 88px;
-    margin-bottom: 8px;
+    left: -92px;
+    bottom: -62px;
   }
 
   #chat::after {
