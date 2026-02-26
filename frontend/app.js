@@ -78,7 +78,13 @@ function setRobotTalking(isTalking) {
 function setupRobotAvatar() {
   if (!robotAvatarEl) return;
   const variantIndex = Math.floor(Math.random() * ROBOT_VARIANTS.length);
-  robotAvatarEl.innerHTML = ROBOT_VARIANTS[variantIndex];
+  robotAvatarEl.innerHTML = `
+    <span class="robot-limb arm-left"></span>
+    <span class="robot-limb arm-right"></span>
+    <span class="robot-limb leg-left"></span>
+    <span class="robot-limb leg-right"></span>
+    ${ROBOT_VARIANTS[variantIndex]}
+  `;
 }
 
 function sleep(ms) {
