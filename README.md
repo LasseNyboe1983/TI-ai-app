@@ -131,3 +131,4 @@ The app is using normal authenticated routing in `frontend/staticwebapp.config.j
 ## 7) Collaboration workflow
 - Changes made in this workspace are intended for the GitHub project.
 - Default expectation: after completing requested changes, stage, commit, and push updates to `origin/main`.
+- Default expectation: batch all requested edits into one consolidated change set whenever feasible, to minimize repeated Accept actions.
