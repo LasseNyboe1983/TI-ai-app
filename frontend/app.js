@@ -15,6 +15,7 @@ const imageToTextFileInput = document.getElementById('imageToTextFileInput');
 const docStatusEl = document.getElementById('docStatus');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 const signOutBtn = document.getElementById('signOutBtn');
+const robotAvatarEl = document.getElementById('robotAvatar');
 
 let conversationHistory = [];
 let attachedDocument = null;
@@ -22,6 +23,8 @@ let imageToTextFile = null;
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const MAX_CONTEXT_CHUNKS = 4;
+const STREAM_CHUNK_SIZE = 3;
+const STREAM_CHUNK_DELAY_MS = 18;
 
 function getClaim(claims, keys) {
   if (!Array.isArray(claims)) return null;
@@ -45,6 +48,43 @@ function addMessage(role, text) {
   node.textContent = text;
   chatEl.appendChild(node);
   chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function createMessageNode(role) {
+  const node = document.createElement('div');
+  node.className = `msg ${role}`;
+  chatEl.appendChild(node);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return node;
+}
+
+function setRobotTalking(isTalking) {
+  if (!robotAvatarEl) return;
+  robotAvatarEl.classList.toggle('talking', Boolean(isTalking));
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+async function streamAssistantMessage(text) {
+  const finalText = String(text || '(No response)');
+  const node = createMessageNode('assistant');
+
+  setRobotTalking(true);
+  try {
+    for (let i = STREAM_CHUNK_SIZE; i < finalText.length; i += STREAM_CHUNK_SIZE) {
+      node.textContent = finalText.slice(0, i);
+      chatEl.scrollTop = chatEl.scrollHeight;
+      await sleep(STREAM_CHUNK_DELAY_MS);
+    }
+    node.textContent = finalText;
+    chatEl.scrollTop = chatEl.scrollHeight;
+  } finally {
+    setRobotTalking(false);
+  }
 }
 
 function addImageMessage(role, imageUrl) {
@@ -476,7 +516,7 @@ form.addEventListener('submit', async (event) => {
         return;
       }
 
-      addMessage('assistant', data.reply || '(No response)');
+      await streamAssistantMessage(data.reply || '(No response)');
       conversationHistory = Array.isArray(data.conversationHistory)
         ? data.conversationHistory
         : [...conversationHistory, { role: 'user', content: prompt }, { role: 'assistant', content: data.reply || '(No response)' }];
@@ -532,13 +572,14 @@ form.addEventListener('submit', async (event) => {
     if (replyType === 'image' && imageUrl) {
       addImageMessage('assistant', imageUrl);
     } else {
-      addMessage('assistant', reply || '(No response)');
+      await streamAssistantMessage(reply || '(No response)');
     }
 
     conversationHistory = Array.isArray(data.conversationHistory)
       ? data.conversationHistory
       : [...conversationHistory, { role: 'user', content: prompt }, { role: 'assistant', content: reply || '[image generated]' }];
   } catch {
+    setRobotTalking(false);
     addMessage('system', 'Network or server error.');
   } finally {
     sendBtn.disabled = false;
