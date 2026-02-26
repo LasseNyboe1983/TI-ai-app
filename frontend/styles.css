@@ -138,6 +138,12 @@ h1 {
   transform-origin: center;
 }
 
+.robot-avatar .robot-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
 .robot-avatar.talking .robot-head-group {
   animation: robot-head-bob 0.4s ease-in-out infinite;
 }
@@ -151,7 +157,7 @@ h1 {
 }
 
 .robot-avatar.talking .robot-eye {
-  animation: robot-eye-blink 1.1s linear infinite;
+  animation: robot-eye-blink 1.25s ease-in-out infinite;
 }
 
 .robot-avatar.talking .robot-antenna-tip {
@@ -440,16 +446,23 @@ button:disabled {
 
 @keyframes robot-eye-blink {
   0%,
-  42%,
-  46%,
-  88%,
-  92%,
+  38%,
+  48%,
+  84%,
+  94%,
   100% {
-    transform: scaleY(1);
+    transform: scaleY(1) translateY(0);
+    opacity: 1;
   }
-  44%,
-  90% {
-    transform: scaleY(0.18);
+  43%,
+  89% {
+    transform: scaleY(0.55) translateY(0.4px);
+    opacity: 0.9;
+  }
+  45%,
+  91% {
+    transform: scaleY(0.32) translateY(0.8px);
+    opacity: 0.82;
   }
 }
 
