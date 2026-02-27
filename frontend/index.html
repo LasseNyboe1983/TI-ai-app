@@ -3,12 +3,49 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Maintenance</title>
+    <title>TI AI Chat Hub</title>
+    <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main>
-      <h1>Maintenance mode</h1>
-      <p>This site is temporarily unavailable.</p>
+    <main class="container">
+      <div class="top-actions">
+        <div id="userInfo" aria-live="polite"></div>
+      </div>
+
+      <header class="header">
+        <h1>TI AI Chat Hub</h1>
+        <div class="controls">
+          <div class="model-selector">
+            <button id="modelToggleBtn" type="button" aria-expanded="false" aria-haspopup="listbox">
+              <span id="modelDescription">Model</span>
+              <span id="modelName"></span>
+            </button>
+            <div id="modelMenu" role="listbox" hidden></div>
+            <select id="model" aria-label="Model" hidden></select>
+          </div>
+          <button id="clearHistoryBtn" type="button">Clear chat</button>
+          <button id="signOutBtn" type="button">Sign out</button>
+        </div>
+      </header>
+
+      <section class="chat-shell">
+        <div id="robotAvatar" class="robot-avatar" aria-hidden="true"></div>
+        <div id="chat" aria-live="polite"></div>
+      </section>
+
+      <div class="chat-actions">
+        <button id="attachDocBtn" type="button">Attach document</button>
+        <button id="readDocBtn" type="button" hidden>Attach image file</button>
+        <input id="docFileInput" type="file" accept=".pdf,.docx,.txt,.md" hidden />
+        <input id="imageToTextFileInput" type="file" hidden />
+        <span id="docStatus" aria-live="polite"></span>
+      </div>
+
+      <form id="promptForm">
+        <textarea id="prompt" placeholder="Type your message..." required></textarea>
+        <button id="sendBtn" type="submit">Send</button>
+      </form>
     </main>
+    <script src="/app.js"></script>
   </body>
 </html>

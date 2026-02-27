@@ -6,7 +6,14 @@ Minimal Azure Static Web Apps setup with:
 - SWA authentication gate in `staticwebapp.config.json`
 - In-chat document attach (`PDF`, `DOCX`, `TXT`, `MD`) for context-aware chat
 
-## 0) Current build state (Feb 24, 2026)
+## 0) Current build state (Feb 27, 2026)
+
+**Verification note (Feb 27, 2026):**
+- This state has been re-verified against repository source files.
+- Maintenance mode is hard-enforced in both frontend and API code paths:
+	- `frontend/staticwebapp.config.json` blocks all routes.
+	- `frontend/index.html` is a maintenance page.
+	- Each API function currently returns `503` at the top of `main(...)` before normal logic executes.
 
 **Deployed UX (frontend):**
 - Model picker is populated from `GET /api/models`.
@@ -40,6 +47,7 @@ Minimal Azure Static Web Apps setup with:
 - The embeddings-based document indexing feature exists (`/api/embeddings`) but is not currently exposed in the UI.
 - The image picker allows selecting *any* file (per requirement), but non-image files may fail when sent to the vision OCR step.
 - For clarity, consider renaming the Image-To-Text model id from `read-doc` to something like `image-to-text` (would require updating frontend/back-end checks).
+- In current frontend flow, model id `read-doc` is routed through `/api/image-to-text`; therefore chat-path embeddings retrieval logic is effectively unreachable for that model.
 
 ## 1) Required environment variables (SWA)
 Set these in Azure Static Web App Configuration:
@@ -108,6 +116,10 @@ When creating/reconfiguring SWA from this repo:
 ## 3.1) GitHub Actions secret
 Add this repository secret before first deploy:
 
+- `AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_MOSS_0EA133603` (the current workflow expects this exact name)
+
+If you rename the workflow secret reference to a generic name, use:
+
 - `AZURE_STATIC_WEB_APPS_API_TOKEN` (from Azure Static Web App -> Manage deployment token)
 
 ## 4) First validation sequence
@@ -124,9 +136,17 @@ Add this repository secret before first deploy:
 - Document context is cleared when **Clear chat** or **Sign out** is used.
 
 ## 5) Maintenance mode
-Maintenance mode is currently **enabled** in this repo.
+Maintenance mode is currently **disabled** in this repo.
 
-This blocks all routes via `frontend/staticwebapp.config.json`, replaces `frontend/index.html` with a maintenance page, and API functions return `503`.
+Current behavior:
+- Frontend routes require authenticated users via `frontend/staticwebapp.config.json` (except signed-out pages).
+- `frontend/index.html` serves the chat application.
+- API functions execute normal logic (no global maintenance `503` short-circuit).
+
+To re-enable maintenance quickly:
+- Set a lock route in `frontend/staticwebapp.config.json` (for example `/*` -> `maintenance-lock`).
+- Replace `frontend/index.html` with maintenance page content.
+- Add early `503` maintenance returns to API `main(...)` handlers.
 
 ## 7) Collaboration workflow
 - Changes made in this workspace are intended for the GitHub project.

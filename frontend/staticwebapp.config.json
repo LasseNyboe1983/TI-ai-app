@@ -1,8 +1,16 @@
 {
   "routes": [
     {
+      "route": "/signed-out.html",
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
+      "route": "/signed-out-full.html",
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
       "route": "/*",
-      "allowedRoles": ["maintenance-lock"]
+      "allowedRoles": ["authenticated"]
     }
   ],
   "responseOverrides": {
