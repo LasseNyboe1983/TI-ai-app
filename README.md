@@ -118,9 +118,14 @@ Add this repository secret before first deploy:
 
 - `AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_MOSS_0EA133603` (the current workflow expects this exact name)
 
-If you rename the workflow secret reference to a generic name, use:
+Potential cleanup (recommended): standardize workflow + repo secret name to:
 
 - `AZURE_STATIC_WEB_APPS_API_TOKEN` (from Azure Static Web App -> Manage deployment token)
+
+Why this cleanup helps:
+- Avoids environment-specific secret names in pipeline files.
+- Makes onboarding and repo portability easier.
+- Matches Azure Static Web Apps documentation/examples.
 
 ## 4) First validation sequence
 1. Open site in private window.
@@ -139,16 +144,27 @@ If you rename the workflow secret reference to a generic name, use:
 Maintenance mode is currently **disabled** in this repo.
 
 Current behavior:
-- Frontend routes require authenticated users via `frontend/staticwebapp.config.json` (except signed-out pages).
+- Frontend routes are open in `frontend/staticwebapp.config.json` so auth/login can happen in-app.
 - `frontend/index.html` serves the chat application.
 - API functions execute normal logic (no global maintenance `503` short-circuit).
 
-To re-enable maintenance quickly:
-- Set a lock route in `frontend/staticwebapp.config.json` (for example `/*` -> `maintenance-lock`).
-- Replace `frontend/index.html` with maintenance page content.
-- Add early `503` maintenance returns to API `main(...)` handlers.
+### Single maintenance ON/OFF control (recommended pattern)
+Use one switch everywhere:
+
+- `MAINTENANCE_MODE=on|off` (SWA app setting)
+
+Implementation pattern:
+- Add one shared helper function in API code, for example `maintenance_guard()`, used at the top of every function `main(...)`.
+- If `MAINTENANCE_MODE=on`, return a consistent `503` JSON payload.
+- Keep `frontend/index.html` as the app shell; show a maintenance message in `app.js` when a lightweight status endpoint reports maintenance on.
+- Keep route config stable (avoid frequent `staticwebapp.config.json` rewrites for maintenance toggling).
+
+Operational result:
+- Turning maintenance ON/OFF becomes one configuration change instead of multiple file edits.
 
 ## 7) Collaboration workflow
 - Changes made in this workspace are intended for the GitHub project.
 - Default expectation: after completing requested changes, stage, commit, and push updates to `origin/main`.
+- Important: local-only edits are not considered complete work for this project. Changes must be pushed to GitHub so Azure Static Web Apps can deploy from the repo.
+- Unless you explicitly request otherwise, completed changes should always include push to GitHub.
 - Default expectation: batch all requested edits into one consolidated change set whenever feasible, to minimize repeated Accept actions.
