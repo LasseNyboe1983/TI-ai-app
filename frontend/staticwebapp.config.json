@@ -10,15 +10,7 @@
     },
     {
       "route": "/*",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["anonymous", "authenticated"]
     }
-  ],
-  "responseOverrides": {
-    "401": {
-      "statusCode": 403
-    },
-    "403": {
-      "statusCode": 403
-    }
-  }
+  ]
 }
