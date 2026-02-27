@@ -1,16 +1,13 @@
 {
   "routes": [
     {
-      "route": "/signed-out.html",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/signed-out-full.html",
+      "route": "/maintenance.html",
       "allowedRoles": ["anonymous", "authenticated"]
     },
     {
       "route": "/*",
-      "allowedRoles": ["anonymous", "authenticated"]
+      "redirect": "/maintenance.html",
+      "statusCode": 302
     }
   ]
 }
